@@ -2,4 +2,7 @@
     <string name="app_name">ChoresAgenda</string>
     <string name="action_settings">Settings</string>
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="btnGetTasks">Get Tasks</string>
+    <string name="btnGetTaskLists">Get Lists</string>
+    <string name="no_network">No network connection available.</string>
 </resources>
