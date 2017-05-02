@@ -11,12 +11,12 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.tasks.TasksScopes;
+import com.google.api.services.tasks.model.Task;
 import com.google.api.services.tasks.model.TaskList;
 import com.google.api.services.tasks.model.TaskLists;
 
 import android.Manifest;
 import android.accounts.AccountManager;
-// import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
@@ -44,7 +44,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -83,6 +82,8 @@ public class ListsActivity extends AppCompatActivity {
     private static final String PREF_ACCOUNT_NAME = "accountName";
     private static final String[] SCOPES = { TasksScopes.TASKS_READONLY };
 
+    private String whichButtonClicked = ""; //chooses whether to get tasks or task lists. set when button is clicked.
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,6 +101,9 @@ public class ListsActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+
+        viewResults = (TextView) findViewById(R.id.txtViewResults);
+ 
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -142,9 +146,9 @@ public class ListsActivity extends AppCompatActivity {
         //TODO get task button lined up next to task list button
         view.setEnabled(false);
         //TODO could add progress bar here "calling api..."
-        //displayTaskLists();
-        viewResults = (TextView) findViewById(R.id.txtViewResults);
 
+        whichButtonClicked = "tasklists";
+        getResultsFromApi();
 
         view.setEnabled(true);
     }
@@ -153,9 +157,9 @@ public class ListsActivity extends AppCompatActivity {
         //TODO get task button lined up next to task list button
         view.setEnabled(false);
         //TODO could add progress bar here "calling api..."
-        //displayTasks();
-        viewResults = (TextView) findViewById(R.id.txtViewResults);
 
+        whichButtonClicked = "tasks";
+        getResultsFromApi();
 
         view.setEnabled(true);
     }
@@ -185,10 +189,8 @@ public class ListsActivity extends AppCompatActivity {
      *     date on this device; false otherwise.
      */
     private boolean isGooglePlayServicesAvailable() {
-        GoogleApiAvailability apiAvailability =
-                GoogleApiAvailability.getInstance();
-        final int connectionStatusCode =
-                apiAvailability.isGooglePlayServicesAvailable(this);
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this);
         return connectionStatusCode == ConnectionResult.SUCCESS;
     }
 
@@ -333,17 +335,21 @@ public class ListsActivity extends AppCompatActivity {
                 requestCode, permissions, grantResults, this);
     }
 
+    /*
+        TODO The next 2 functions get errors, need to figure out why
+    */
+
     /**
      * Callback for when a permission is granted using the EasyPermissions
      * library.
      * @param requestCode The request code associated with the requested
      *         permission
      * @param list The requested permission list. Never null.
-     *//*
-    @Override
+     */
+    //@Override
     public void onPermissionsGranted(int requestCode, List<String> list) {
         // Do nothing.
-    }*/
+    }
 
     /**
      * Callback for when a permission is denied using the EasyPermissions
@@ -351,11 +357,11 @@ public class ListsActivity extends AppCompatActivity {
      * @param requestCode The request code associated with the requested
      *         permission
      * @param list The requested permission list. Never null.
-     *//*
-    @Override
+     */
+    //@Override
     public void onPermissionsDenied(int requestCode, List<String> list) {
         // Do nothing.
-    }*/
+    }
 
     /**
      * An asynchronous task that handles the Google Tasks API call.
@@ -379,7 +385,11 @@ public class ListsActivity extends AppCompatActivity {
         @Override
         protected List<String> doInBackground(Void... params) {
             try {
-                return getDataFromApi();
+                if (whichButtonClicked.equals("tasklists")) {
+                    return getTaskListsFromApi();
+                } else {
+                    return getTasksFromApi();
+                }
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -393,7 +403,7 @@ public class ListsActivity extends AppCompatActivity {
          *         there are no task lists found.
          * @throws IOException
          */
-        private List<String> getDataFromApi() throws IOException {
+        private List<String> getTaskListsFromApi() throws IOException {
             // List up to 10 task lists.
             List<String> taskListInfo = new ArrayList<>();
             TaskLists result = mService.tasklists().list()
@@ -408,6 +418,43 @@ public class ListsActivity extends AppCompatActivity {
                 }
             }
             return taskListInfo;
+        }
+
+        /**
+         * Fetch a list of the first 10 task lists.
+         * @return List of Strings describing task lists, or an empty list if
+         *         there are no task lists found.
+         * @throws IOException
+         */
+        private List<String> getTasksFromApi() throws IOException {
+            // List up to 10 task lists.
+            List<String> taskListInfo = new ArrayList<String>();
+            TaskLists listsresult = mService.tasklists().list().setMaxResults(Long.valueOf(10)).execute();
+            List<TaskList> tasklists = listsresult.getItems();
+            ArrayList<com.google.api.services.tasks.model.Tasks> tasksresult = new ArrayList<>();
+            ArrayList<List<Task>> alltasks = new ArrayList<>();
+            if (tasklists != null) {
+                for (TaskList tasklist : tasklists) {
+                    String tasklistname = tasklist.getTitle();//title given by user
+                    String listEtag = tasklist.getEtag();//null
+                    String listid = tasklist.getId();//task list identifier
+                    String listtype = tasklist.getKind();//tasks#taskList
+                    String listlink = tasklist.getSelfLink();//rest link
+                    String updated = tasklist.getUpdated().toString();//last update
+                    taskListInfo.add(String.format("%s (%s)\n", tasklistname, updated));
+                    com.google.api.services.tasks.model.Tasks trl = mService.tasks().list(listid).execute();
+                    tasksresult.add(trl);
+                    List<Task> tasks = trl.getItems();
+                    alltasks.add(tasks);
+                }
+            }
+            List<String> taskInfo = new ArrayList<String>();
+            for (List<Task> t1 : alltasks) {
+                for (Task t2 : t1) {
+                    taskInfo.add(t2.getTitle());
+                }
+            }
+            return taskInfo;//taskListInfo;
         }
 
         @Override
@@ -470,16 +517,18 @@ public class ListsActivity extends AppCompatActivity {
             PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
+            //args.p
             fragment.setArguments(args);
+            //fragment.s
             return fragment;
         }
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_lists, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+            TextView textView = (TextView) rootView.findViewById(R.id.section_label);//TODO would like to display results here
             textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
+            //getActivity().
             return rootView;
         }
     }
