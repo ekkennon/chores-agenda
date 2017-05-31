@@ -45,6 +45,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,8 +72,8 @@ public class ListsActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
 
+    PlaceholderFragment fragment;
     GoogleAccountCredential mCredential;
-    private TextView viewResults;
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
@@ -102,8 +103,7 @@ public class ListsActivity extends AppCompatActivity {
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
-        viewResults = (TextView) findViewById(R.id.txtViewResults);
- 
+        fragment = (PlaceholderFragment) mSectionsPagerAdapter.getItem(mViewPager.getCurrentItem());
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -147,6 +147,8 @@ public class ListsActivity extends AppCompatActivity {
         view.setEnabled(false);
         //TODO could add progress bar here "calling api..."
 
+        //Toast.makeText(ListsActivity.this, "getTaskLists", Toast.LENGTH_LONG).show();
+
         whichButtonClicked = "tasklists";
         getResultsFromApi();
 
@@ -157,6 +159,8 @@ public class ListsActivity extends AppCompatActivity {
         //TODO get task button lined up next to task list button
         view.setEnabled(false);
         //TODO could add progress bar here "calling api..."
+
+        //Toast.makeText(ListsActivity.this, "getTasks", Toast.LENGTH_LONG).show();
 
         whichButtonClicked = "tasks";
         getResultsFromApi();
@@ -172,12 +176,16 @@ public class ListsActivity extends AppCompatActivity {
      * appropriate.
      */
     private void getResultsFromApi() {
+        //Toast.makeText(ListsActivity.this, "getResultsFromApi", Toast.LENGTH_LONG).show();
         if (! isGooglePlayServicesAvailable()) {
+            //Toast.makeText(ListsActivity.this, "getResultsFromApi if", Toast.LENGTH_LONG).show();
             acquireGooglePlayServices();
         } else if (mCredential.getSelectedAccountName() == null) {
+            //Toast.makeText(ListsActivity.this, "getResultsFromApi elseif", Toast.LENGTH_LONG).show();
             chooseAccount();
         } else if (! isDeviceOnline()) {
-            viewResults.setText(getResources().getString(R.string.no_network));
+            //Toast.makeText(ListsActivity.this, "getResultsFromApi else", Toast.LENGTH_LONG).show();
+            //viewResults.setText(getResources().getString(R.string.no_network));//TODO textview
         } else {
             new MakeRequestTask(mCredential).execute();
         }
@@ -189,6 +197,7 @@ public class ListsActivity extends AppCompatActivity {
      *     date on this device; false otherwise.
      */
     private boolean isGooglePlayServicesAvailable() {
+        //Toast.makeText(ListsActivity.this, "isGooglePlayServicesAvailable", Toast.LENGTH_LONG).show();
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this);
         return connectionStatusCode == ConnectionResult.SUCCESS;
@@ -199,10 +208,9 @@ public class ListsActivity extends AppCompatActivity {
      * Play Services installation via a user dialog, if possible.
      */
     private void acquireGooglePlayServices() {
-        GoogleApiAvailability apiAvailability =
-                GoogleApiAvailability.getInstance();
-        final int connectionStatusCode =
-                apiAvailability.isGooglePlayServicesAvailable(this);
+        //Toast.makeText(ListsActivity.this, "acquireGooglePlayServices", Toast.LENGTH_LONG).show();
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        final int connectionStatusCode = apiAvailability.isGooglePlayServicesAvailable(this);
         if (apiAvailability.isUserResolvableError(connectionStatusCode)) {
             showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode);
         }
@@ -214,13 +222,9 @@ public class ListsActivity extends AppCompatActivity {
      * @param connectionStatusCode code describing the presence (or lack of)
      *     Google Play Services on this device.
      */
-    void showGooglePlayServicesAvailabilityErrorDialog(
-            final int connectionStatusCode) {
+    void showGooglePlayServicesAvailabilityErrorDialog(final int connectionStatusCode) {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        Dialog dialog = apiAvailability.getErrorDialog(
-                ListsActivity.this,
-                connectionStatusCode,
-                REQUEST_GOOGLE_PLAY_SERVICES);
+        Dialog dialog = apiAvailability.getErrorDialog(ListsActivity.this, connectionStatusCode, REQUEST_GOOGLE_PLAY_SERVICES);
         dialog.show();
     }
 
@@ -236,26 +240,23 @@ public class ListsActivity extends AppCompatActivity {
      */
     @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
     private void chooseAccount() {
-        if (EasyPermissions.hasPermissions(
-                this, Manifest.permission.GET_ACCOUNTS)) {
-            String accountName = getPreferences(Context.MODE_PRIVATE)
-                    .getString(PREF_ACCOUNT_NAME, null);
+        //Toast.makeText(ListsActivity.this, "chooseAccount", Toast.LENGTH_LONG).show();
+        if (EasyPermissions.hasPermissions(this, Manifest.permission.GET_ACCOUNTS)) {
+            //Toast.makeText(ListsActivity.this, "chooseAccount if 1", Toast.LENGTH_LONG).show();
+            String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
+                //Toast.makeText(ListsActivity.this, "chooseAccount if", Toast.LENGTH_LONG).show();
                 mCredential.setSelectedAccountName(accountName);
                 getResultsFromApi();
             } else {
+                //Toast.makeText(ListsActivity.this, "chooseAccount if else", Toast.LENGTH_LONG).show();
                 // Start a dialog from which the user can choose an account
-                startActivityForResult(
-                        mCredential.newChooseAccountIntent(),
-                        REQUEST_ACCOUNT_PICKER);
+                startActivityForResult(mCredential.newChooseAccountIntent(), REQUEST_ACCOUNT_PICKER);
             }
         } else {
+            //Toast.makeText(ListsActivity.this, "chooseAccount else", Toast.LENGTH_LONG).show();
             // Request the GET_ACCOUNTS permission via a user dialog
-            EasyPermissions.requestPermissions(
-                    this,
-                    "This app needs to access your Google account (via Contacts).",
-                    REQUEST_PERMISSION_GET_ACCOUNTS,
-                    Manifest.permission.GET_ACCOUNTS);
+            EasyPermissions.requestPermissions(this, "This app needs to access your Google account (via Contacts).", REQUEST_PERMISSION_GET_ACCOUNTS, Manifest.permission.GET_ACCOUNTS);
         }
     }
 
@@ -264,8 +265,8 @@ public class ListsActivity extends AppCompatActivity {
      * @return true if the device has a network connection, false otherwise.
      */
     private boolean isDeviceOnline() {
-        ConnectivityManager connMgr =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        //Toast.makeText(ListsActivity.this, "isDeviceOnline", Toast.LENGTH_LONG).show();
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }
@@ -281,15 +282,13 @@ public class ListsActivity extends AppCompatActivity {
      *     activity result.
      */
     @Override
-    protected void onActivityResult(
-            int requestCode, int resultCode, Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //Toast.makeText(ListsActivity.this, "onActivityResult", Toast.LENGTH_LONG).show();
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
-                    viewResults.setText(
-                            "This app requires Google Play Services. Please install " +
-                                    "Google Play Services on your device and relaunch this app.");
+                    //viewResults.setText("This app requires Google Play Services. Please install Google Play Services on your device and relaunch this app.");//TODO textview
                 } else {
                     getResultsFromApi();
                 }
@@ -327,12 +326,10 @@ public class ListsActivity extends AppCompatActivity {
      *     which is either PERMISSION_GRANTED or PERMISSION_DENIED. Never null.
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        //Toast.makeText(ListsActivity.this, "onRequestPermissionsResult", Toast.LENGTH_LONG).show();
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        EasyPermissions.onRequestPermissionsResult(
-                requestCode, permissions, grantResults, this);
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 
     /*
@@ -373,6 +370,7 @@ public class ListsActivity extends AppCompatActivity {
         private Exception mLastError = null;
 
         MakeRequestTask(GoogleAccountCredential credential) {
+            //Toast.makeText(ListsActivity.this, "MakeRequestTask", Toast.LENGTH_LONG).show();
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             mService = new com.google.api.services.tasks.Tasks.Builder(transport, jsonFactory, credential).setApplicationName("Google Tasks API Android Quickstart").build();
@@ -384,10 +382,13 @@ public class ListsActivity extends AppCompatActivity {
          */
         @Override
         protected List<String> doInBackground(Void... params) {
+            //Toast.makeText(ListsActivity.this, "MakeRequestTask doInBackground", Toast.LENGTH_LONG).show();
             try {
                 if (whichButtonClicked.equals("tasklists")) {
+                    //Toast.makeText(ListsActivity.this, "mrt doInBackground tasklist", Toast.LENGTH_LONG).show();
                     return getTaskListsFromApi();
                 } else {
+                    //Toast.makeText(ListsActivity.this, "mrt doInBackground task", Toast.LENGTH_LONG).show();
                     return getTasksFromApi();
                 }
             } catch (Exception e) {
@@ -405,6 +406,7 @@ public class ListsActivity extends AppCompatActivity {
          */
         private List<String> getTaskListsFromApi() throws IOException {
             // List up to 10 task lists.
+            //Toast.makeText(ListsActivity.this, "MakeRequestTask getTaskListsFromApi", Toast.LENGTH_LONG).show();
             List<String> taskListInfo = new ArrayList<>();
             TaskLists result = mService.tasklists().list()
                     .setMaxResults(Long.valueOf(10))
@@ -428,6 +430,7 @@ public class ListsActivity extends AppCompatActivity {
          */
         private List<String> getTasksFromApi() throws IOException {
             // List up to 10 task lists.
+            //Toast.makeText(ListsActivity.this, "MakeRequestTask getTasksFromApi", Toast.LENGTH_LONG).show();
             List<String> taskListInfo = new ArrayList<String>();
             TaskLists listsresult = mService.tasklists().list().setMaxResults(Long.valueOf(10)).execute();
             List<TaskList> tasklists = listsresult.getItems();
@@ -459,25 +462,32 @@ public class ListsActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            viewResults.setText("");
+            //Toast.makeText(ListsActivity.this, "onPreExecute", Toast.LENGTH_LONG).show();
+            //viewResults.setText("");//TODO textview
             //mProgress.show(); TODO progress bar
         }
 
         @Override
         protected void onPostExecute(List<String> output) {
+            //Toast.makeText(ListsActivity.this, "onPostExecute", Toast.LENGTH_LONG).show();
             //mProgress.hide(); TODO progress bar
             if (output == null || output.size() == 0) {
-                viewResults.setText("No results returned.");
+                //viewResults.setText("No results returned.");//TODO textview
             } else {
                 output.add(0, "Data retrieved using the Google Tasks API:");
-                viewResults.setText(TextUtils.join("\n", output));
+                Toast.makeText(ListsActivity.this, output.get(0), Toast.LENGTH_LONG).show();
+                //mSectionsPagerAdapter.displayApiResults(TextUtils.join("\n", output));
+                //viewResults.setText(TextUtils.join("\n", output));
+                //fragment.displayApiResults(TextUtils.join("\n", output)); //TODO this line crashes the app
             }
         }
 
         @Override
         protected void onCancelled() {
+            //Toast.makeText(ListsActivity.this, "onCancelled", Toast.LENGTH_LONG).show();
             //mProgress.hide(); TODO progress bar
             if (mLastError != null) {
+                //Toast.makeText(ListsActivity.this, "onCancelled lasterror null", Toast.LENGTH_LONG).show();
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(
                             ((GooglePlayServicesAvailabilityIOException) mLastError)
@@ -487,11 +497,11 @@ public class ListsActivity extends AppCompatActivity {
                             ((UserRecoverableAuthIOException) mLastError).getIntent(),
                             ListsActivity.REQUEST_AUTHORIZATION);
                 } else {
-                    viewResults.setText("The following error occurred:\n"
-                            + mLastError.getMessage());
+                    //viewResults.setText("The following error occurred:\n" + mLastError.getMessage());//TODO textview
                 }
             } else {
-                viewResults.setText("Request cancelled.");
+                //Toast.makeText(ListsActivity.this, "onCancelled lasterror notnull", Toast.LENGTH_LONG).show();
+                //viewResults.setText("Request cancelled.");//TODO textview
             }
         }
     }
@@ -500,6 +510,8 @@ public class ListsActivity extends AppCompatActivity {
      * A placeholder fragment containing a simple view.
      */
     public static class PlaceholderFragment extends Fragment {
+        TextView textView;
+
         /**
          * The fragment argument representing the section number for this
          * fragment.
@@ -507,6 +519,7 @@ public class ListsActivity extends AppCompatActivity {
         private static final String ARG_SECTION_NUMBER = "section_number";
 
         public PlaceholderFragment() {
+            //Toast.makeText(getActivity(), "fragment", Toast.LENGTH_LONG).show();
         }
 
         /**
@@ -514,22 +527,26 @@ public class ListsActivity extends AppCompatActivity {
          * number.
          */
         public static PlaceholderFragment newInstance(int sectionNumber) {
+            //Toast.makeText(getActivity(), "new fragment", Toast.LENGTH_LONG).show();
             PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
             args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            //args.p
             fragment.setArguments(args);
-            //fragment.s
             return fragment;
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            //Toast.makeText(getActivity(), "create view", Toast.LENGTH_LONG).show();
             View rootView = inflater.inflate(R.layout.fragment_lists, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);//TODO would like to display results here
+            textView = (TextView) rootView.findViewById(R.id.section_label);
             textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
-            //getActivity().
             return rootView;
+        }
+
+        public void displayApiResults(String disp) {
+            //Toast.makeText(getActivity(), "displayApiResults", Toast.LENGTH_LONG).show();
+            textView.setText(disp);
         }
     }
 

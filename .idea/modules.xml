@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ChoresAgenda.iml" filepath="$PROJECT_DIR$/ChoresAgenda.iml" />
+      <module fileurl="file://$PROJECT_DIR$/GamifiedTasks.iml" filepath="$PROJECT_DIR$/GamifiedTasks.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
