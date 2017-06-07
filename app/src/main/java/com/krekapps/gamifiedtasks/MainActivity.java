@@ -9,10 +9,9 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.Toast;
 
 /**
- * Created by raefo on 18-Apr-17.
+ * Created by ekk on 18-Apr-17.
  * from starter code at https://developers.google.com/google-apps/tasks/quickstart/android
  */
 
@@ -42,10 +41,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 EditText editor = (EditText) findViewById(R.id.newtask);
-                String s = editor.getText().toString();
-                Toast.makeText(MainActivity.this, s, Toast.LENGTH_LONG).show();
+                String newTaskName = editor.getText().toString();
+                editor.setText("");
                 Intent intent = new Intent(getApplicationContext(), ListsActivity.class);
-                intent.putExtra(NEW_TASK_NAME, s);
+                intent.putExtra(NEW_TASK_NAME, newTaskName);
                 startActivity(intent);
             }
         });
