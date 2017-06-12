@@ -13,12 +13,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -27,18 +23,12 @@ import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GooglePlayServicesAvailabilityIOException;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
+import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
-import com.google.api.services.sheets.v4.model.Sheet;
-import com.google.api.services.sheets.v4.model.SheetProperties;
-import com.google.api.services.sheets.v4.model.Spreadsheet;
-import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
 import java.io.IOException;
@@ -50,90 +40,55 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 /**
- * Created by ekk on 18-Apr-17.
- * from starter code at https://developers.google.com/google-apps/tasks/quickstart/android
+ * Created by raefo on 11-Jun-17.
  */
 
-public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
+public class AddTaskActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
     GoogleAccountCredential mCredential;
-    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, SheetsScopes.SPREADSHEETS_READONLY };
+    public static String NEW_TASK_NAME = "newtaskname";
+    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, SheetsScopes.SPREADSHEETS };
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
     private static final String PREF_ACCOUNT_NAME = "accountName";
-    Spinner taskCategories;
-    static final String CATEGORY_INTENT = "category";
+    String category = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.add_task);
 
         mCredential = GoogleAccountCredential.usingOAuth2(getApplicationContext(), Arrays.asList(SCOPES)).setBackOff(new ExponentialBackOff());
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        taskCategories = (Spinner) findViewById(R.id.categories);
-
-        FloatingActionButton view = (FloatingActionButton) findViewById(R.id.fabview);
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String catName = taskCategories.getSelectedItem().toString();
-                if (catName.length() > 0) {
-                    Intent intent = new Intent(getApplicationContext(), ListsActivity.class);
-                    intent.putExtra(CATEGORY_INTENT, catName);
-                    startActivity(intent);
-                } else {
-                    Toast.makeText(getApplicationContext(), "Please choose a category first", Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-
         getResultsFromApi();
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            //Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
-            //startActivity(intent);
-            //return true;
+        Intent intent = getIntent();
+        if (intent.hasExtra(MainActivity.CATEGORY_INTENT)) {
+            category = intent.getStringExtra(MainActivity.CATEGORY_INTENT);
         }
 
-        return super.onOptionsItemSelected(item);
+        if (category.equals("")) {
+            Toast.makeText(this, "Please choose a category first", Toast.LENGTH_LONG).show();
+            Intent goBack = new Intent(this, MainActivity.class);
+            startActivity(goBack);
+        }
+
+        FloatingActionButton add = (FloatingActionButton) findViewById(R.id.fabadd);
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                EditText editor = (EditText) findViewById(R.id.newtask);
+                String newTaskName = editor.getText().toString();
+                editor.setText("");
+                new AddTaskActivity.AddTask(mCredential, newTaskName).execute();
+            }
+        });
     }
 
-    public void getCategories(View v) {
-        new MainActivity.MakeRequestTask(mCredential).execute();
-    }
-
-    public void displayCategories(List<String> catNames) {
-        //TODO populate spinner
-
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, catNames);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        taskCategories.setAdapter(adapter);
-
-
-
-
+    private void navigateToListActivity() {
+        Intent intent = new Intent(getApplicationContext(), ListsActivity.class);
+        intent.putExtra(MainActivity.CATEGORY_INTENT, category);
+        startActivity(intent);
     }
 
     private void getResultsFromApi() {
@@ -142,9 +97,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         } else if (mCredential.getSelectedAccountName() == null) {
             chooseAccount();
         } else if (! isDeviceOnline()) {
-            Toast.makeText(MainActivity.this, "No network connection available.", Toast.LENGTH_LONG).show();
+            Toast.makeText(AddTaskActivity.this, "No network connection available.", Toast.LENGTH_LONG).show();
         } else {
-            //new MainActivity.MakeRequestTask(mCredential).execute();
+            //new ListsActivity.AddTask(mCredential, ).execute();
         }
     }
 
@@ -197,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 mCredential.setSelectedAccountName(accountName);
+
                 getResultsFromApi();
             } else {
                 // Start a dialog from which the user can choose an account
@@ -216,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
      */
     void showGooglePlayServicesAvailabilityErrorDialog(final int connectionStatusCode) {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-        Dialog dialog = apiAvailability.getErrorDialog(MainActivity.this, connectionStatusCode, REQUEST_GOOGLE_PLAY_SERVICES);
+        Dialog dialog = apiAvailability.getErrorDialog(AddTaskActivity.this, connectionStatusCode, REQUEST_GOOGLE_PLAY_SERVICES);
         dialog.show();
     }
 
@@ -232,12 +188,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
      */
     @Override
     protected void onActivityResult(
-        int requestCode, int resultCode, Intent data) {
+            int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode != RESULT_OK) {
-                    Toast.makeText(MainActivity.this, "This app requires Google Play Services. Please install Google Play Services on your device and relaunch this app.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(AddTaskActivity.this, "This app requires Google Play Services. Please install Google Play Services on your device and relaunch this app.", Toast.LENGTH_LONG).show();
                 } else {
                     getResultsFromApi();
                 }
@@ -301,20 +257,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         // Do nothing.
     }
 
-    /**
-     * An asynchronous task that handles the Google API call.
-     * Placing the API calls in their own task ensures the UI stays responsive.
-     */
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+    private class AddTask extends AsyncTask<Void, Void, Void> {
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
+        private String taskName;
 
-        MakeRequestTask(GoogleAccountCredential credential) {
-            HttpTransport transport = AndroidHttp.newCompatibleTransport();
-            JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-            driveService = new com.google.api.services.drive.Drive.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
-            sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
+        AddTask(GoogleAccountCredential credential, String task) {
+            taskName = task;
+            driveService = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
+            sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
         }
 
         /**
@@ -322,20 +274,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
          * @param params no parameters needed for this task.
          */
         @Override
-        protected List<String> doInBackground(Void... params) {
-            List<String> resultTasks = new ArrayList<>();
+        protected Void doInBackground(Void... params) {
             try {
-                resultTasks = getDataFromApi();
+                getDataFromApi(taskName);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
-            } finally {
-                if (resultTasks.size() < 1) {
-                    return null;
-                } else {
-                    return resultTasks;
-                }
             }
+            return null;
         }
 
         /**
@@ -348,74 +294,26 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
          *         found.
          * @throws IOException
          */
-        private List<String> getDataFromApi() throws IOException {
-            String fileName = "ChoresAgenda";
-            List<String> categoryNames = new ArrayList<>();
-            FileList result = driveService.files().list().setQ("name='" + fileName + "'").setFields("files(id)").execute();
-            List<File> files = result.getFiles();
-            if (files != null) {
-                if (files.size() > 1) {
-                    categoryNames.add("Multiple files returned with name ");
-                    categoryNames.add(fileName);
-                    categoryNames.add(". Please Check the files in your account.");
-                } else if (files.size() < 1) {
-                    //this.sheetService.spreadsheets().create(createSheet(fileName)).execute();
-                    categoryNames.add("create sheet");
-                } else {
-                    String spreadsheetId = files.get(0).getId();
-                    List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
-                    for (Sheet s : sheets) {
-                        categoryNames.add(s.getProperties().getTitle());
-                    }
-                    /*
-                    String range = "Tasks!A1:A";
-                    ValueRange response = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
-                    List<List<Object>> values = response.getValues();
+        private void getDataFromApi(String task) throws IOException {
+            //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
+            ArrayList<Object> listOfTaskNames = new ArrayList<>();
+            listOfTaskNames.add(task);
+            List<List<Object>> listOfList = new ArrayList<>();
+            listOfList.add(listOfTaskNames);
 
-                    if (values != null) {
-                        int numItems = values.size();
-                        for (List row : values) {
-                            String s = row.get(0).toString();
-                            fileInfo.add(s);
-                        }
-                    }*/
-                }
-            } else {
-                categoryNames.add("Tasks");//TODO temporary default
-            }
-            return categoryNames;
+
+            String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
+
+            Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, category + "!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, category + "!A1:A").execute().getValues().size()+1), new ValueRange().setValues(listOfList));
+            response.setValueInputOption("raw");
+            response.execute();
         }
 
-        //private Spreadsheet createSheet(String fileName) {
-            //TODO what to do in this activity if there is no sheet
-            /*
-            Spreadsheet spreadsheet = new Spreadsheet();
-            SpreadsheetProperties properties = new SpreadsheetProperties();
-            properties.setTitle(fileName);
-            spreadsheet.setProperties(properties);
-
-            Sheet taskSheet = new Sheet();
-            //Sheet routineSheet = new Sheet();
-            //Sheet projectSheet = new Sheet();
-
-            SheetProperties sheetProps =  new SheetProperties();
-            sheetProps.setTitle("Tasks");
-            taskSheet.setProperties(sheetProps);
-            List<Sheet> sheetList = new ArrayList<>();
-            sheetList.add(taskSheet);
-            spreadsheet.setSheets(sheetList);
-            return spreadsheet;
-        }*/
-
         @Override
-        protected void onPostExecute(List<String> output) {
-            if (output == null || output.size() == 0) {
-                Toast.makeText(MainActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
-            } else {
-                //output.add("");
-                //tasknames = output.toArray(new String[output.size()]);
-                displayCategories(output);
-            }
+        protected void onPostExecute(Void v) {
+            //
+            // getResultsFromApi();
+            navigateToListActivity();
         }
 
         @Override
@@ -424,12 +322,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
                 } else if (mLastError instanceof UserRecoverableAuthIOException) {
-                    startActivityForResult(((UserRecoverableAuthIOException) mLastError).getIntent(), MainActivity.REQUEST_AUTHORIZATION);
+                    startActivityForResult(((UserRecoverableAuthIOException) mLastError).getIntent(), ListsActivity.REQUEST_AUTHORIZATION);
                 } else {
-                    Toast.makeText(MainActivity.this, "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(AddTaskActivity.this, "The following error occurred:\n" + mLastError.getMessage(), Toast.LENGTH_LONG).show();
                 }
             } else {
-                Toast.makeText(MainActivity.this, "Request cancelled.", Toast.LENGTH_LONG).show();
+                Toast.makeText(AddTaskActivity.this, "Request cancelled.", Toast.LENGTH_LONG).show();
             }
         }
     }

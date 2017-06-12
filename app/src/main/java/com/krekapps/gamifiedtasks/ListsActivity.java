@@ -61,8 +61,9 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
     private String spreadsheetId;
     private int numItems;
     String[] tasknames;
-    String newTaskName;
     GoogleAccountCredential mCredential;
+    String newTaskName = "";
+    String category = "";
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     static final int REQUEST_AUTHORIZATION = 1001;
@@ -77,7 +78,17 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         setContentView(R.layout.activity_lists);
 
         Intent intent = getIntent();
-        newTaskName = intent.getStringExtra(MainActivity.NEW_TASK_NAME);
+        if (intent.hasExtra(AddTaskActivity.NEW_TASK_NAME)) {
+            newTaskName = intent.getStringExtra(AddTaskActivity.NEW_TASK_NAME);
+        } else if (intent.hasExtra(MainActivity.CATEGORY_INTENT)) {
+            category = intent.getStringExtra(MainActivity.CATEGORY_INTENT);
+        }
+
+        if (category.equals("")) {
+            Toast.makeText(this, "Please choose a category first", Toast.LENGTH_LONG).show();
+            Intent goBack = new Intent(this, MainActivity.class);
+            startActivity(goBack);
+        }
 
         mCredential = GoogleAccountCredential.usingOAuth2(getApplicationContext(), Arrays.asList(SCOPES)).setBackOff(new ExponentialBackOff());
     }
@@ -116,7 +127,19 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         getResultsFromApi();
         if (!newTaskName.isEmpty()) {
             new UpdateSheet(mCredential, newTaskName).execute();
+            newTaskName = "";
         }
+    }
+
+    public void chooseCategory(View v) {
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
+    }
+
+    public void navigateAddClick(View v) {
+        Intent intent = new Intent(this, AddTaskActivity.class);
+        intent.putExtra(MainActivity.CATEGORY_INTENT, category);
+        startActivity(intent);
     }
 
     public void displayTasks() {
@@ -352,7 +375,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                     fileInfo.add("sheet created");
                 } else {
                     spreadsheetId = files.get(0).getId();
-                    String range = "Tasks!A1:A";
+                    String range = category + "!A1:A";
                     ValueRange response = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
                     List<List<Object>> values = response.getValues();
 
@@ -414,6 +437,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             }
         }
     }
+
     private class UpdateSheet extends AsyncTask<Void, Void, Void> {
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
@@ -450,13 +474,13 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          * @throws IOException
          */
         private void getDataFromApi(String task) throws IOException {
+            //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             ArrayList<Object> listOfTaskNames = new ArrayList<>();
             listOfTaskNames.add(task);
-
             List<List<Object>> listOfList = new ArrayList<>();
             listOfList.add(listOfTaskNames);
 
-            Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, "Tasks!A" + Integer.toString(numItems+1), new ValueRange().setValues(listOfList));
+            Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, category + "!A" + Integer.toString(numItems+1), new ValueRange().setValues(listOfList));
             response.setValueInputOption("raw");
             response.execute();
         }
@@ -521,16 +545,30 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             DimensionRange dimensionRange = new DimensionRange();
             dimensionRange.setDimension("ROWS");
             dimensionRange.setStartIndex(position);
-            dimensionRange.setEndIndex(position+1);
-            dimensionRange.setSheetId(sheetService.spreadsheets().get(spreadsheetId).execute().getSheets().get(0).getProperties().getSheetId());
+            dimensionRange.setEndIndex(position + 1);
 
-            DeleteDimensionRequest deleteDimensionRequest = new DeleteDimensionRequest();
-            deleteDimensionRequest.setRange(dimensionRange);
+            int sheetId = -1;
+            List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
+            for (Sheet s : sheets) {
+                if (s.getProperties().getTitle().equals(category)) {
+                    sheetId = s.getProperties().getSheetId();
+                }
+            }
 
-            Request request = new Request().setDeleteDimension(deleteDimensionRequest);
-            List<Request> requests = new ArrayList<>();
-            requests.add(request);
-            sheetService.spreadsheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
+            if (sheetId > -1) {
+                dimensionRange.setSheetId(sheetId);
+
+                DeleteDimensionRequest deleteDimensionRequest = new DeleteDimensionRequest();
+                deleteDimensionRequest.setRange(dimensionRange);
+
+                Request request = new Request().setDeleteDimension(deleteDimensionRequest);
+                List<Request> requests = new ArrayList<>();
+                requests.add(request);
+                sheetService.spreadsheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
+
+            } else {
+                //TODO sheet was not found
+            }
         }
 
         @Override
