@@ -43,6 +43,7 @@ import com.google.api.services.sheets.v4.model.SheetProperties;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
     private String spreadsheetId;
     private int numItems;
-    String[] tasknames;
+    List<Task> tasklist;
     GoogleAccountCredential mCredential;
     String newTaskName = "";
     String category = "";
@@ -125,10 +126,11 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
     public void loadListClick(View v) {
         getResultsFromApi();
+        /*
         if (!newTaskName.isEmpty()) {
             new UpdateSheet(mCredential, newTaskName).execute();
             newTaskName = "";
-        }
+        }*/
     }
 
     public void chooseCategory(View v) {
@@ -143,8 +145,13 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
     }
 
     public void displayTasks() {
+        String[] tasknames = new String[tasklist.size()];
+        for (int i=0;i<tasklist.size();i++) {
+            tasknames[i] = tasklist.get(i).getName();
+        }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.row_list, R.id.taskname, tasknames);
         setListAdapter(adapter);
+        //TODO this will also show the due date when that feature works
     }
 
     private void getResultsFromApi() {
@@ -317,7 +324,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
      * An asynchronous task that handles the Google API call.
      * Placing the API calls in their own task ensures the UI stays responsive.
      */
-    private class MakeRequestTask extends AsyncTask<Void, Void, List<String>> {
+    private class MakeRequestTask extends AsyncTask<Void, Void, List<Task>> {
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
@@ -334,8 +341,8 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          * @param params no parameters needed for this task.
          */
         @Override
-        protected List<String> doInBackground(Void... params) {
-            List<String> resultTasks = new ArrayList<>();
+        protected List<Task> doInBackground(Void... params) {
+            List<Task> resultTasks = new ArrayList<>();
             try {
                 resultTasks = getDataFromApi();
             } catch (Exception e) {
@@ -360,19 +367,21 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          *         found.
          * @throws IOException
          */
-        private List<String> getDataFromApi() throws IOException {
+        private List<Task> getDataFromApi() throws IOException {
             String fileName = "ChoresAgenda";
-            List<String> fileInfo = new ArrayList<>();
+            List<Task> tasks = new ArrayList<>();
             FileList result = driveService.files().list().setQ("name='" + fileName + "'").setFields("files(id)").execute();
             List<File> files = result.getFiles();
             if (files != null) {
                 if (files.size() > 1) {
-                    fileInfo.add("Multiple files returned with name ");
-                    fileInfo.add(fileName);
-                    fileInfo.add(". Please Check the files in your account.");
+                    //fileInfo.add("Multiple files returned with name ");
+                    //fileInfo.add(fileName);
+                    //fileInfo.add(". Please Check the files in your account.");
+                    //TODO this function returns a list of task, how to output an error?
                 } else if (files.size() < 1) {
                     this.sheetService.spreadsheets().create(createSheet(fileName)).execute();
-                    fileInfo.add("sheet created");
+                    //fileInfo.add("sheet created");
+                    //TODO this block needs to be in main activity, then return error from this activity
                 } else {
                     spreadsheetId = files.get(0).getId();
                     String range = category + "!A1:A";
@@ -382,13 +391,14 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                     if (values != null) {
                         numItems = values.size();
                         for (List row : values) {
-                            String s = row.get(0).toString();
-                            fileInfo.add(s);
+                            Task t = new Task(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
+                            //String s = row.get(0).toString();
+                            tasks.add(t);
                         }
                     }
                 }
             }
-            return fileInfo;
+            return tasks;
         }
 
         private Spreadsheet createSheet(String fileName) {
@@ -412,12 +422,12 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         }
 
         @Override
-        protected void onPostExecute(List<String> output) {
+        protected void onPostExecute(List<Task> output) {
             if (output == null || output.size() == 0) {
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
                 //output.add("");
-                tasknames = output.toArray(new String[output.size()]);
+                tasklist = output;//.toArray(new String[output.size()]);
                 displayTasks();
             }
         }

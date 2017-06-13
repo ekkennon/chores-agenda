@@ -30,6 +30,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,9 +79,10 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
             @Override
             public void onClick(View view) {
                 EditText editor = (EditText) findViewById(R.id.newtask);
-                String newTaskName = editor.getText().toString();
+                Task newTask = new Task(editor.getText().toString());
+                //String newTaskName = ;
                 editor.setText("");
-                new AddTaskActivity.AddTask(mCredential, newTaskName).execute();
+                new AddTaskActivity.AddTask(mCredential, newTask).execute();
             }
         });
     }
@@ -261,10 +263,10 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
-        private String taskName;
+        private Task newTask;
 
-        AddTask(GoogleAccountCredential credential, String task) {
-            taskName = task;
+        AddTask(GoogleAccountCredential credential, Task task) {
+            newTask = task;
             driveService = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
             sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
         }
@@ -276,7 +278,7 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                getDataFromApi(taskName);
+                getDataFromApi(/*newTask*/);
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -294,10 +296,10 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
          *         found.
          * @throws IOException
          */
-        private void getDataFromApi(String task) throws IOException {
+        private void getDataFromApi(/*Task task*/) throws IOException {
             //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             ArrayList<Object> listOfTaskNames = new ArrayList<>();
-            listOfTaskNames.add(task);
+            listOfTaskNames.add(newTask.getName());
             List<List<Object>> listOfList = new ArrayList<>();
             listOfList.add(listOfTaskNames);
 
