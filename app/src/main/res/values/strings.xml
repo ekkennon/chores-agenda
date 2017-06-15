@@ -7,6 +7,7 @@
     <string name="load_list">Load List</string>
     <string name="get_categories">Get Categories</string>
     <string name="change_cat">Change Category</string>
+    <string name="new_task_hint">New Task</string>
 
     <!-- Strings related to Settings -->
 

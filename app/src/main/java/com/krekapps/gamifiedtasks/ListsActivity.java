@@ -61,7 +61,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
     private String spreadsheetId;
     private int numItems;
-    List<Task> tasklist;
+    //List<Task> tasklist;
     GoogleAccountCredential mCredential;
     String newTaskName = "";
     String category = "";
@@ -144,10 +144,10 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         startActivity(intent);
     }
 
-    public void displayTasks() {
+    public void displayTasks(List<Task> tasklist) {
         String[] tasknames = new String[tasklist.size()];
         for (int i=0;i<tasklist.size();i++) {
-            tasknames[i] = tasklist.get(i).getName();
+            tasknames[i] = tasklist.get(i).toString();
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.row_list, R.id.taskname, tasknames);
         setListAdapter(adapter);
@@ -391,7 +391,13 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                     if (values != null) {
                         numItems = values.size();
                         for (List row : values) {
-                            Task t = new Task(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
+                            String[] task = row.get(0).toString().split(":");//TODO what does get(0) do? is 0 the column?
+                            Task t = new Task(task[0]);
+                            if (task.length > 1) {
+                                t.setIsDue(true);
+                                t.setDue(task[1]);
+                            }
+
                             //String s = row.get(0).toString();
                             tasks.add(t);
                         }
@@ -427,8 +433,8 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
                 //output.add("");
-                tasklist = output;//.toArray(new String[output.size()]);
-                displayTasks();
+                //tasklist = output;//.toArray(new String[output.size()]);
+                displayTasks(output);
             }
         }
 

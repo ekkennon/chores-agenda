@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -35,6 +36,8 @@ import com.krekapps.gamifiedtasks.models.Task;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
@@ -54,6 +57,10 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
     private static final String PREF_ACCOUNT_NAME = "accountName";
     String category = "";
+    //private Task newTask;
+    private boolean dueDate = false;
+    Calendar date = Calendar.getInstance();
+    DatePicker dateSetter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,17 +81,43 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
             startActivity(goBack);
         }
 
+        DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
+        Date d = new Date();
+        Calendar c = Calendar.getInstance();
+
+
+        dateSetter.init(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH), new DatePicker.OnDateChangedListener() {
+            @Override
+            public void onDateChanged(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                dueDate = true;
+                //DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
+                date.set(view.getYear(), view.getMonth(), view.getDayOfMonth());
+            }
+        });
+
         FloatingActionButton add = (FloatingActionButton) findViewById(R.id.fabadd);
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 EditText editor = (EditText) findViewById(R.id.newtask);
                 Task newTask = new Task(editor.getText().toString());
+
+                if (dueDate) {
+                    newTask.setIsDue(dueDate);
+                    newTask.setDue(date);
+                }
+
                 //String newTaskName = ;
                 editor.setText("");
                 new AddTaskActivity.AddTask(mCredential, newTask).execute();
             }
         });
+    }
+
+    private void setDueDate(View v) {
+        dueDate = true;
+        //DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
+        date.set(dateSetter.getYear(), dateSetter.getMonth(), dateSetter.getDayOfMonth());
     }
 
     private void navigateToListActivity() {
@@ -299,7 +332,7 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         private void getDataFromApi(/*Task task*/) throws IOException {
             //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             ArrayList<Object> listOfTaskNames = new ArrayList<>();
-            listOfTaskNames.add(newTask.getName());
+            listOfTaskNames.add(newTask.toString());
             List<List<Object>> listOfList = new ArrayList<>();
             listOfList.add(listOfTaskNames);
 

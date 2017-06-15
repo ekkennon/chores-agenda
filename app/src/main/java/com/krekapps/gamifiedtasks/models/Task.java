@@ -1,5 +1,6 @@
 package com.krekapps.gamifiedtasks.models;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -7,11 +8,15 @@ import java.util.Date;
  */
 
 public class Task {
+    //TODO int position, String category, id = category + position;
     private String name;
-    private Date due;
+    private Calendar due;
+    private boolean isDue;
 
     public Task(String name) {
+        isDue = false;
         this.name = name;
+        due = Calendar.getInstance();
     }
 
     public String getName() {
@@ -22,15 +27,39 @@ public class Task {
         this.name = name;
     }
 
-    public Date getDue() {
+    public Calendar getDue() {
         return due;
     }
 
-    public boolean isDueNull() {
-        return due == null;
+    public String getDueDateString() {
+        return due.get(Calendar.DAY_OF_MONTH) + "/" + due.get(Calendar.MONTH) + "/" + due.get(Calendar.YEAR);
     }
 
-    public void setDue(Date due) {
+    public void setDue(Calendar due) {
         this.due = due;
+    }
+
+    public void setDue(String date) {
+        String[] d = date.split("/");
+        due.set(Integer.parseInt(d[2]),Integer.parseInt(d[1]),Integer.parseInt(d[0]));
+    }
+
+    public boolean getIsDue() {
+        return isDue;
+    }
+
+    public void setIsDue(boolean isDue) {
+        this.isDue = isDue;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder toReturn = new StringBuilder();
+        toReturn.append(name);
+        if (isDue) {
+            toReturn.append(":");
+            toReturn.append(getDueDateString());
+        }
+        return toReturn.toString();
     }
 }
