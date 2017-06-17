@@ -41,7 +41,9 @@ public class Task {
 
     public void setDue(String date) {
         String[] d = date.split("/");
-        due.set(Integer.parseInt(d[2]),Integer.parseInt(d[1]),Integer.parseInt(d[0]));
+        if (d.length == 3) {
+            due.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]), Integer.parseInt(d[0]));
+        }
     }
 
     public boolean getIsDue() {
@@ -52,12 +54,17 @@ public class Task {
         this.isDue = isDue;
     }
 
+    public boolean isOverdue() {
+        Calendar today = Calendar.getInstance();
+        return due.get(Calendar.YEAR) == today.get(Calendar.YEAR) && due.get(Calendar.MONTH) == today.get(Calendar.MONTH) && due.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH);
+    }
+
     @Override
     public String toString() {
         StringBuilder toReturn = new StringBuilder();
         toReturn.append(name);
         if (isDue) {
-            toReturn.append(":");
+            toReturn.append("@");
             toReturn.append(getDueDateString());
         }
         return toReturn.toString();
