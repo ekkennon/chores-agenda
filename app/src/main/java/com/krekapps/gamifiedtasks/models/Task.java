@@ -1,7 +1,10 @@
 package com.krekapps.gamifiedtasks.models;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Created by raefo on 12-Jun-17.
@@ -10,13 +13,19 @@ import java.util.Date;
 public class Task {
     //TODO int position, String category, id = category + position;
     private String name;
-    private Calendar due;
-    private boolean isDue;
+    private Calendar dueDate;
+    private boolean hasDueDate;
+    private boolean isRepeating;
+    private int repeatFrequency;
+    private RepeatPeriod repeatPeriod;
 
     public Task(String name) {
-        isDue = false;
         this.name = name;
-        due = Calendar.getInstance();
+        hasDueDate = false;
+        dueDate = Calendar.getInstance();
+        isRepeating = false;
+        repeatFrequency = 0;
+        repeatPeriod = RepeatPeriod.NONE;
     }
 
     public String getName() {
@@ -28,44 +37,117 @@ public class Task {
     }
 
     public Calendar getDue() {
-        return due;
+        return dueDate;
     }
 
     public String getDueDateString() {
-        return due.get(Calendar.DAY_OF_MONTH) + "/" + due.get(Calendar.MONTH) + "/" + due.get(Calendar.YEAR);
+        return dueDate.get(Calendar.DAY_OF_MONTH) + "/" + dueDate.get(Calendar.MONTH) + "/" + dueDate.get(Calendar.YEAR);
     }
 
-    public void setDue(Calendar due) {
-        this.due = due;
+    public void setDueDate(Calendar due) {
+        this.dueDate = due;
     }
 
-    public void setDue(String date) {
+    public void setDueDate(String date) {
         String[] d = date.split("/");
         if (d.length == 3) {
-            due.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]), Integer.parseInt(d[0]));
+            dueDate.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]), Integer.parseInt(d[0]));
         }
     }
 
-    public boolean getIsDue() {
-        return isDue;
+    public void updateDueDate() {
+        //if (repeatPeriod == RepeatPeriod.DAY) {
+            dueDate.roll(Calendar.DAY_OF_MONTH,repeatFrequency);
+        //}
     }
 
-    public void setIsDue(boolean isDue) {
-        this.isDue = isDue;
+    public boolean hasDueDate() {
+        return hasDueDate;
+    }
+
+    public void setHasDueDate(boolean isDue) {
+        this.hasDueDate = isDue;
     }
 
     public boolean isOverdue() {
-        Calendar today = Calendar.getInstance();
-        return due.get(Calendar.YEAR) == today.get(Calendar.YEAR) && due.get(Calendar.MONTH) == today.get(Calendar.MONTH) && due.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH);
+        if (hasDueDate) {
+            Calendar today = Calendar.getInstance();
+            return dueDate.get(Calendar.YEAR) == today.get(Calendar.YEAR) && dueDate.get(Calendar.MONTH) == today.get(Calendar.MONTH) && dueDate.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH);
+        }
+        return false;
+    }
+
+    public boolean isRepeating() {
+        return isRepeating;
+    }
+
+    public void setRepeating(boolean repeating) {
+        isRepeating = repeating;
+    }
+
+    public int getRepeatFrequency() {
+        return repeatFrequency;
+    }
+
+    public void setRepeatFrequency(int repeatFrequency) {
+        this.repeatFrequency = repeatFrequency;
+    }
+
+    public RepeatPeriod getRepeatPeriod() {
+        return repeatPeriod;
+    }
+
+    public String getRepeatPeriodString() {
+        return repeatPeriod.getPeriod();
+    }
+
+    public void setRepeatPeriod(RepeatPeriod repeatPeriod) {
+        this.repeatPeriod = repeatPeriod;
+    }
+
+    public void setRepeatPeriod(String repeatPeriod) {
+        this.repeatPeriod = RepeatPeriod.valueOf(repeatPeriod);
+    }
+
+    public static Task fromString(String s) {
+        String[] list = s.split(":");
+        Task t;
+        if (list.length % 2 == 1) {
+            t = new Task(s);
+        } else {
+            HashMap<String, String> map = new HashMap<>();
+            for (int i = 0; i < list.length; i += 2) {
+                map.put(list[i], list[i + 1]);
+            }
+
+            t = new Task(map.get("name"));
+            if (map.containsKey("due")) {
+                t.setHasDueDate(true);
+                t.setDueDate(map.get("due"));
+            }
+            if (map.containsKey("repeating")) {
+                t.setRepeating(true);
+                t.setRepeatFrequency(Integer.parseInt(map.get("repeating")));
+                t.setRepeatPeriod(RepeatPeriod.DAY);//map.get("per"));//TODO this should not default to daily
+            }
+        }
+        return t;
     }
 
     @Override
     public String toString() {
         StringBuilder toReturn = new StringBuilder();
+        toReturn.append("name:");
         toReturn.append(name);
-        if (isDue) {
-            toReturn.append("@");
+        if (hasDueDate) {
+            toReturn.append(":due:");
             toReturn.append(getDueDateString());
+        }
+        if (isRepeating) {
+            toReturn.append(":repeating:");
+            toReturn.append(repeatFrequency);
+            toReturn.append(":per:");
+            toReturn.append(getRepeatPeriodString());
         }
         return toReturn.toString();
     }

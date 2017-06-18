@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -31,6 +32,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.krekapps.gamifiedtasks.models.RepeatPeriod;
 import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
@@ -103,8 +105,15 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
                 Task newTask = new Task(editor.getText().toString());
 
                 if (dueDate) {
-                    newTask.setIsDue(dueDate);
-                    newTask.setDue(date);
+                    newTask.setHasDueDate(dueDate);
+                    newTask.setDueDate(date);
+                }
+
+                ToggleButton isRepeating = (ToggleButton) findViewById(R.id.isrepeating);
+                if (isRepeating.isChecked()) {
+                    newTask.setRepeating(true);
+                    newTask.setRepeatFrequency(1);
+                    newTask.setRepeatPeriod(RepeatPeriod.DAY);
                 }
 
                 //String newTaskName = ;
