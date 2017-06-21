@@ -1,10 +1,13 @@
 package com.krekapps.gamifiedtasks.models;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * Created by raefo on 12-Jun-17.
@@ -41,7 +44,12 @@ public class Task {
     }
 
     public String getDueDateString() {
-        return dueDate.get(Calendar.DAY_OF_MONTH) + "/" + dueDate.get(Calendar.MONTH) + "/" + dueDate.get(Calendar.YEAR);
+        //SimpleDateFormat monthParse = ;
+        //SimpleDateFormat monthDisplay =
+        //new SimpleDateFormat("MMMM").format(new SimpleDateFormat("MM").parse(dueDate.get));
+        //return monthDisplay.format();
+
+        return dueDate.get(Calendar.DAY_OF_MONTH) + "/" + dueDate.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) + "/" + dueDate.get(Calendar.YEAR);
     }
 
     public void setDueDate(Calendar due) {
@@ -51,7 +59,14 @@ public class Task {
     public void setDueDate(String date) {
         String[] d = date.split("/");
         if (d.length == 3) {
-            dueDate.set(Integer.parseInt(d[2]), Integer.parseInt(d[1]), Integer.parseInt(d[0]));
+            Calendar cal = Calendar.getInstance();
+            try {
+                cal.setTime(new SimpleDateFormat("MMM", Locale.getDefault()).parse(d[1]));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            dueDate.set(Integer.parseInt(d[2]), cal.get(Calendar.MONTH), Integer.parseInt(d[0]));
         }
     }
 
