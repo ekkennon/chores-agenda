@@ -28,18 +28,17 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecovera
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.File;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.krekapps.gamifiedtasks.models.RepeatPeriod;
+import com.krekapps.gamifiedtasks.models.Tag;
 import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
@@ -59,10 +58,8 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
     static final int REQUEST_PERMISSION_GET_ACCOUNTS = 1003;
     private static final String PREF_ACCOUNT_NAME = "accountName";
     String category = "";
-    //private Task newTask;
     private boolean dueDate = false;
     Calendar date = Calendar.getInstance();
-    DatePicker dateSetter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,15 +81,12 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         }
 
         DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
-        Date d = new Date();
         Calendar c = Calendar.getInstance();
-
 
         dateSetter.init(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH), new DatePicker.OnDateChangedListener() {
             @Override
             public void onDateChanged(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                 dueDate = true;
-                //DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
                 date.set(view.getYear(), view.getMonth(), view.getDayOfMonth());
             }
         });
@@ -116,17 +110,11 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
                     newTask.setRepeatPeriod(RepeatPeriod.DAY);
                 }
 
-                //String newTaskName = ;
+                newTask.addTag(new Tag(category));
                 editor.setText("");
                 new AddTaskActivity.AddTask(mCredential, newTask).execute();
             }
         });
-    }
-
-    private void setDueDate(View v) {
-        dueDate = true;
-        //DatePicker dateSetter = (DatePicker) findViewById(R.id.duedate);
-        date.set(dateSetter.getYear(), dateSetter.getMonth(), dateSetter.getDayOfMonth());
     }
 
     private void navigateToListActivity() {
@@ -142,8 +130,6 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
             chooseAccount();
         } else if (! isDeviceOnline()) {
             Toast.makeText(AddTaskActivity.this, "No network connection available.", Toast.LENGTH_LONG).show();
-        } else {
-            //new ListsActivity.AddTask(mCredential, ).execute();
         }
     }
 
@@ -320,7 +306,7 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                getDataFromApi(/*newTask*/);
+                getDataFromApi();
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
@@ -338,13 +324,12 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
          *         found.
          * @throws IOException
          */
-        private void getDataFromApi(/*Task task*/) throws IOException {
+        private void getDataFromApi() throws IOException {
             //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             ArrayList<Object> listOfTaskNames = new ArrayList<>();
             listOfTaskNames.add(newTask.toString());
             List<List<Object>> listOfList = new ArrayList<>();
             listOfList.add(listOfTaskNames);
-
 
             String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
 
@@ -355,8 +340,6 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
 
         @Override
         protected void onPostExecute(Void v) {
-            //
-            // getResultsFromApi();
             navigateToListActivity();
         }
 
