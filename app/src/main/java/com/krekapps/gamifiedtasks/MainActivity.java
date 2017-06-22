@@ -36,10 +36,6 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.Sheet;
-import com.google.api.services.sheets.v4.model.SheetProperties;
-import com.google.api.services.sheets.v4.model.Spreadsheet;
-import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
-import com.google.api.services.sheets.v4.model.ValueRange;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -111,9 +107,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            //Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
-            //startActivity(intent);
-            //return true;
+            Intent intent = new Intent(getApplicationContext(), SettingsActivity.class);
+            startActivity(intent);
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -124,16 +120,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     public void displayCategories(List<String> catNames) {
-        //TODO populate spinner
-
-
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, catNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         taskCategories.setAdapter(adapter);
-
-
-
-
     }
 
     private void getResultsFromApi() {
@@ -143,8 +132,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             chooseAccount();
         } else if (! isDeviceOnline()) {
             Toast.makeText(MainActivity.this, "No network connection available.", Toast.LENGTH_LONG).show();
-        } else {
-            //new MainActivity.MakeRequestTask(mCredential).execute();
         }
     }
 
@@ -367,18 +354,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     for (Sheet s : sheets) {
                         categoryNames.add(s.getProperties().getTitle());
                     }
-                    /*
-                    String range = "Tasks!A1:A";
-                    ValueRange response = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
-                    List<List<Object>> values = response.getValues();
-
-                    if (values != null) {
-                        int numItems = values.size();
-                        for (List row : values) {
-                            String s = row.get(0).toString();
-                            fileInfo.add(s);
-                        }
-                    }*/
                 }
             } else {
                 categoryNames.add("Tasks");//TODO temporary default
@@ -412,8 +387,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             if (output == null || output.size() == 0) {
                 Toast.makeText(MainActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
-                //output.add("");
-                //tasknames = output.toArray(new String[output.size()]);
                 displayCategories(output);
             }
         }
