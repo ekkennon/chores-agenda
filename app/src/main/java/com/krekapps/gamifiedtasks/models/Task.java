@@ -188,7 +188,7 @@ public class Task {
             toReturn.append(":per:");
             toReturn.append(getRepeatPeriodString());
         }
-        if (tags.size() > 0) {
+        if (tags != null && !tags.isEmpty() && tags.size() > 0) {
             toReturn.append(":tags:");
             toReturn.append(getTagsString());
         }

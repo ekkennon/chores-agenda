@@ -43,13 +43,11 @@ import com.google.api.services.sheets.v4.model.SheetProperties;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
-import com.krekapps.gamifiedtasks.models.Tag;
 import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +63,6 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
     private String spreadsheetId;
     private int numItems;
-    //List<Task> tasklist;
     GoogleAccountCredential mCredential;
     String newTaskName = "";
     String category = "";
@@ -130,19 +127,6 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
     public void loadListClick(View v) {
         getResultsFromApi();
-        /*
-        if (!newTaskName.isEmpty()) {
-            new UpdateSheet(mCredential, newTaskName).execute();
-            newTaskName = "";
-        }*/
-    }
-
-    public void addTasks(List<Task> adding) {
-        List<Object> adds = new ArrayList<>();
-        for (Task t : adding) {
-            adds.add(t.toString());
-        }
-        //new UpdateSheet(mCredential, adds).execute();
     }
 
     public void chooseCategory(View v) {
@@ -163,7 +147,6 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.row_list, R.id.taskname, tasknames);
         setListAdapter(adapter);
-        //TODO this will also show the due date when that feature works
     }
 
     private void getResultsFromApi() {
@@ -227,7 +210,6 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             String accountName = getPreferences(Context.MODE_PRIVATE).getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
                 mCredential.setSelectedAccountName(accountName);
-
                 getResultsFromApi();
             } else {
                 // Start a dialog from which the user can choose an account
@@ -340,10 +322,8 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
-        private String progress;
 
         MakeRequestTask(GoogleAccountCredential credential) {
-            progress = "";
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             driveService = new com.google.api.services.drive.Drive.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
@@ -356,7 +336,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          */
         @Override
         protected Map<String,List<Task>> doInBackground(Void... params) {
-            Map<String,List<Task>> resultTasks = new HashMap<>();//ArrayList<>();
+            Map<String,List<Task>> resultTasks = new HashMap<>();
             try {
                 resultTasks = getDataFromApi();
             } catch (Exception e) {
@@ -390,13 +370,9 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             Map<String,List<Task>> toReturn = new HashMap<>();
             if (files != null) {
                 if (files.size() > 1) {
-                    //fileInfo.add("Multiple files returned with name ");
-                    //fileInfo.add(fileName);
-                    //fileInfo.add(". Please Check the files in your account.");
                     //TODO this function returns a list of task, how to output an error?
                 } else if (files.size() < 1) {
                     this.sheetService.spreadsheets().create(createSheet(fileName)).execute();
-                    //fileInfo.add("sheet created");
                     //TODO this block needs to be in main activity, then return error from this activity
                 } else {
                     spreadsheetId = files.get(0).getId();
@@ -405,48 +381,27 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                     List<List<Object>> values = response.getValues();
 
                     if (values != null) {
-                        //progress = "values not null";
                         List<Task> todays = new ArrayList<>();
                         numItems = values.size();
                         List<Task> tasks = new ArrayList<>();
                         for (List row : values) {
-                            //progress = "row size = " + Integer.toString(row.size());
-                            //progress = row.get(0).toString();
+
                             Task t = Task.fromString(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
 
-                            //String[] task = row.get(0).toString().split(":");
-                            //Task t = new Task(task[0]);
-                            //testing += "task=" + Integer.toString(task.length) + ", row=" + Integer.toString(row.size());
-                            //if (task.length > 1) {
-                                //t.setIsDue(true);
-                                //t.setDue(task[1]);
-
-                            //progress = t.toString();
                             tasks.add(t);
                             if (t.isOverdue()) {
                                 Task today = Task.fromString(t.toString());//create new task since tasks and todays need different references
                                 today.setRepeating(false);
                                 todays.add(today);
-                                //new UpdateSheet(mCredential, t).execute();
-                                progress += today.getName();
                             }
-                            //}
-
-                            //String s = row.get(0).toString();
-
                         }
                         if (tasks.size() > 0) {
-                            //progress += "task size = " + Integer.toString(tasks.size());
                             toReturn.put("tasks",tasks);
                         }
 
                         if (todays.size() > 0 && !category.equals("Due Today") && !category.equals("Routine")) {
-                            //progress += "today size = " + Integer.toString(todays.size());
-                            //TODO add todays to Due Today list
-
                             toReturn.put("todays",todays);
                         }
-                        //return tasks;
                     }
                 }
             }
@@ -478,26 +433,17 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             if (output == null || output.size() == 0) {
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
-                //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
-
                 if (output.containsKey("tasks")) {
                     displayTasks(output.get("tasks"));
                 }
                 if (output.containsKey("todays")) {
-                    //addTasks(output.get("todays"));
                     new UpdateSheet(mCredential, output.get("todays")).execute();
                 }
-                //output.add("");
-                //ArrayList<Task> tasklist = output;//.toArray(new String[output.size()]);
-                //displayTasks(new ArrayList(output));
-
-                //toAdd);
             }
         }
 
         @Override
         protected void onCancelled() {
-            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
@@ -515,11 +461,9 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
     private class UpdateSheet extends AsyncTask<Void, Void, Void> {
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
-        private List<Task>/*Task*/ tasklist;
-        private String progress;
+        private List<Task> tasklist;
 
-        UpdateSheet(GoogleAccountCredential credential, List<Task>/*Task*/ tasks) {
-            progress = "update sheet";
+        UpdateSheet(GoogleAccountCredential credential, List<Task> tasks) {
             tasklist = tasks;
             sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
         }
@@ -568,32 +512,11 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
                 response.setValueInputOption("raw");
                 response.execute();
-                //String v2 = "Due Today!A" + Integer.toString(items) + ":A" + Integer.toString(items+tasklist.size());
             }
-
-
-            //listOfTaskNames.add(tasklist.toString());
-
-
-
-
-            //progress = "tasklist=" + Integer.toString(tasklist.size());
-
-
-
-            //progress = "done";
-
-            //progress = "executed";
-        }
-
-        @Override
-        protected void onPostExecute(Void v) {
-                //getResultsFromApi();
         }
 
         @Override
         protected void onCancelled() {
-            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
@@ -613,10 +536,8 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private com.google.api.services.drive.Drive driveService = null;
         private Exception mLastError = null;
         private int position;
-        private String progress;
 
         CompleteTask(GoogleAccountCredential credential, int task) {
-            progress = "";
             position = task;
             sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
             driveService = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
@@ -648,84 +569,62 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          * @throws IOException
          */
         private void getDataFromApi() throws IOException {
-            //for (int i=1;i<3;i++) {
-                //if (i == 1) {
-                    String range = category + "!A" + Integer.toString(position+1);
-                    ValueRange readlineresponse = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
-                    List<List<Object>> values = readlineresponse.getValues();
-                    if (values.size() == 1) {
-                        List<Object> value = values.get(0);
-                        if (value.size() == 1) {
-                            Task t = Task.fromString(value.get(0).toString());
-                            if (t.isRepeating()) {
-                                if (t.hasDueDate()) {
-                                    t.updateDueDate();
-                                }
-
-                                List<List<Object>> almain = new ArrayList<>();
-                                //progress += "almain";
-                                List<Object> al = new ArrayList<>();
-                                //progress += "al";
-                                al.add(t.toString());
-                                //progress += "al add";
-                                almain.add(al);
-                                //progress += "almain add";
-                                //TODO create new task with new due date
-                                String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
-                                //progress += "spreadsheetid";
-                                Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, category + "!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, category + "!A1:A").execute().getValues().size() + 1), new ValueRange().setValues(almain));
-                                //progress += "response";
-                                response.setValueInputOption("raw");
-                                //progress += "raw";
-                                response.execute();
-                                //progress += "executed";
-                            } else {
-                                progress = t.toString();
-                            }
+            String range = category + "!A" + Integer.toString(position+1);
+            ValueRange readlineresponse = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
+            List<List<Object>> values = readlineresponse.getValues();
+            if (values != null && !values.isEmpty() && values.size() == 1) {
+                List<Object> value = values.get(0);
+                if (value != null && !value.isEmpty() && value.size() == 1) {
+                    Task t = Task.fromString(value.get(0).toString());
+                    if (t.isRepeating()) {
+                        if (t.hasDueDate()) {
+                            t.updateDueDate();
                         }
+
+                        List<List<Object>> almain = new ArrayList<>();
+                        List<Object> al = new ArrayList<>();
+                        al.add(t.toString());
+                        almain.add(al);
+                        //TODO create new task with new due date
+                        String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
+                        Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, category + "!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, category + "!A1:A").execute().getValues().size() + 1), new ValueRange().setValues(almain));
+                        response.setValueInputOption("raw");
+                        response.execute();
                     }
-                //} else if (i == 2) {
+                }
+            }
 
+            DimensionRange dimensionRange = new DimensionRange();
+            dimensionRange.setDimension("ROWS");
+            dimensionRange.setStartIndex(position);
+            dimensionRange.setEndIndex(position + 1);
 
-                    DimensionRange dimensionRange = new DimensionRange();
-                    dimensionRange.setDimension("ROWS");
-                    dimensionRange.setStartIndex(position);
-                    dimensionRange.setEndIndex(position + 1);
+            int sheetId = -1;
+            List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
+            for (Sheet s : sheets) {
+                if (s.getProperties().getTitle().equals(category)) {
+                    sheetId = s.getProperties().getSheetId();
+                }
+            }
 
-                    int sheetId = -1;
-                    List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
-                    for (Sheet s : sheets) {
-                        if (s.getProperties().getTitle().equals(category)) {
-                            sheetId = s.getProperties().getSheetId();
-                        }
-                    }
+            if (sheetId > -1) {
+                dimensionRange.setSheetId(sheetId);
 
-                    if (sheetId > -1) {
-                        dimensionRange.setSheetId(sheetId);
+                DeleteDimensionRequest deleteDimensionRequest = new DeleteDimensionRequest();
+                deleteDimensionRequest.setRange(dimensionRange);
 
-                        DeleteDimensionRequest deleteDimensionRequest = new DeleteDimensionRequest();
-                        deleteDimensionRequest.setRange(dimensionRange);
+                Request request = new Request().setDeleteDimension(deleteDimensionRequest);
+                List<Request> requests = new ArrayList<>();
+                requests.add(request);
+                sheetService.spreadsheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
 
-                        Request request = new Request().setDeleteDimension(deleteDimensionRequest);
-                        List<Request> requests = new ArrayList<>();
-                        requests.add(request);
-                        sheetService.spreadsheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
-
-                    } else {
-                        //TODO sheet was not found
-                    }
-                //}
-            //}
-        }
-
-        @Override
-        protected void onPostExecute(Void v) {
-            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
+            } else {
+                //TODO sheet was not found
+            }
         }
 
         @Override
         protected void onCancelled() {
-            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     Toast.makeText(ListsActivity.this, "GooglePlayServicesAvailabilityIOException", Toast.LENGTH_LONG).show();
