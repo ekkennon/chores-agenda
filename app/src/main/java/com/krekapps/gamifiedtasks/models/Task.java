@@ -130,6 +130,14 @@ public class Task {
         return tags;
     }
 
+    public String getTagsString() {
+        StringBuilder tagslist = new StringBuilder();
+        for (Tag t : tags) {
+            tagslist.append(t.toString());
+        }
+        return tagslist.toString();
+    }
+
     public void addTag(Tag t) {
         tags.add(t);
     }
@@ -155,6 +163,12 @@ public class Task {
                 t.setRepeatFrequency(Integer.parseInt(map.get("repeating")));
                 t.setRepeatPeriod(RepeatPeriod.DAY);//map.get("per"));//TODO this should not default to daily
             }
+            if (map.containsKey("tags")) {
+                String[] tagslist = map.get("tags").split(",");
+                for (String tagstring : tagslist) {
+                    t.addTag(new Tag(tagstring));
+                }
+            }
         }
         return t;
     }
@@ -173,6 +187,10 @@ public class Task {
             toReturn.append(repeatFrequency);
             toReturn.append(":per:");
             toReturn.append(getRepeatPeriodString());
+        }
+        if (tags.size() > 0) {
+            toReturn.append(":tags:");
+            toReturn.append(getTagsString());
         }
         return toReturn.toString();
     }

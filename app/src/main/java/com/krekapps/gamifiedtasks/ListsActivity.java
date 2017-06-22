@@ -43,6 +43,7 @@ import com.google.api.services.sheets.v4.model.SheetProperties;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.krekapps.gamifiedtasks.models.Tag;
 import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
@@ -412,6 +413,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                             //progress = "row size = " + Integer.toString(row.size());
                             //progress = row.get(0).toString();
                             Task t = Task.fromString(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
+
                             //String[] task = row.get(0).toString().split(":");
                             //Task t = new Task(task[0]);
                             //testing += "task=" + Integer.toString(task.length) + ", row=" + Integer.toString(row.size());
@@ -438,7 +440,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                             toReturn.put("tasks",tasks);
                         }
 
-                        if (todays.size() > 0 && !category.equals("Due Today")) {
+                        if (todays.size() > 0 && !category.equals("Due Today") && !category.equals("Routine")) {
                             //progress += "today size = " + Integer.toString(todays.size());
                             //TODO add todays to Due Today list
 
