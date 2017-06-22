@@ -29,14 +29,14 @@
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".controllers.SettingsActivity"
+            android:name=".SettingsActivity"
             android:label="@string/title_activity_settings" />
         <activity
             android:name=".AddTaskActivity"
             android:label="@string/action_add_task"
             />
         <activity
-            android:name=".controllers.CategoriesActivity"
+            android:name=".CategoriesActivity"
             android:label="@string/title_activity_categories"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>

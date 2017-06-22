@@ -21,6 +21,7 @@ public class Task {
     private boolean isRepeating;
     private int repeatFrequency;
     private RepeatPeriod repeatPeriod;
+    private ArrayList<Tag> tags;
 
     public Task(String name) {
         this.name = name;
@@ -29,6 +30,7 @@ public class Task {
         isRepeating = false;
         repeatFrequency = 0;
         repeatPeriod = RepeatPeriod.NONE;
+        tags = new ArrayList<>();
     }
 
     public String getName() {
@@ -122,6 +124,14 @@ public class Task {
 
     public void setRepeatPeriod(String repeatPeriod) {
         this.repeatPeriod = RepeatPeriod.valueOf(repeatPeriod);
+    }
+
+    public ArrayList<Tag> getTags() {
+        return tags;
+    }
+
+    public void addTag(Tag t) {
+        tags.add(t);
     }
 
     public static Task fromString(String s) {
