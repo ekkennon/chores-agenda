@@ -43,6 +43,7 @@ import com.google.api.services.sheets.v4.model.SheetProperties;
 import com.google.api.services.sheets.v4.model.Spreadsheet;
 import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.krekapps.gamifiedtasks.models.Tag;
 import com.krekapps.gamifiedtasks.models.Task;
 
 import java.io.IOException;
@@ -388,6 +389,10 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
                             Task t = Task.fromString(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
 
+                            if (t.getTags().size() < 1) {
+                                t.addTag(new Tag(category));
+                            }
+
                             tasks.add(t);
                             if (t.isOverdue()) {
                                 Task today = Task.fromString(t.toString());//create new task since tasks and todays need different references
@@ -433,11 +438,11 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             if (output == null || output.size() == 0) {
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
-                if (output.containsKey("tasks")) {
-                    displayTasks(output.get("tasks"));
-                }
                 if (output.containsKey("todays")) {
                     new UpdateSheet(mCredential, output.get("todays")).execute();
+                }
+                if (output.containsKey("tasks")) {
+                    displayTasks(output.get("tasks"));
                 }
             }
         }
@@ -462,8 +467,10 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
         private List<Task> tasklist;
+        private String progress;
 
         UpdateSheet(GoogleAccountCredential credential, List<Task> tasks) {
+            progress = "";
             tasklist = tasks;
             sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
         }
@@ -503,8 +510,11 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
                 Sheets.Spreadsheets.Values r1 = this.sheetService.spreadsheets().values();
                 ValueRange numvalues = r1.get(spreadsheetId, "Due Today!A1:A").execute();
-                int items = numvalues.getValues().size()+1;
 
+                int items = 1;
+                if (numvalues.getValues() != null) {
+                    items += numvalues.getValues().size();
+                }
                 ValueRange v1 = new ValueRange().setValues(listOfList);
                 String v2 = "Due Today!A" + Integer.toString(items);
 
@@ -517,6 +527,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
         @Override
         protected void onCancelled() {
+            Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
