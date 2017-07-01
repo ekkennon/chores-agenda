@@ -8,6 +8,10 @@
     <string name="get_categories">Get Categories</string>
     <string name="change_cat">Change Category</string>
     <string name="new_task_hint">New Task</string>
+    <string name="action_add_tags">Add Tags</string>
+    <string name="save_tag">Save Tag and Add Another</string>
+    <string name="finish_tag">Save Tag and Go Back</string>
+    <string name="new_tag_hint">New Tag Name</string>
 
     <!-- Strings related to Settings -->
 

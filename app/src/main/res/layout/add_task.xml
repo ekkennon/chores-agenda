@@ -29,6 +29,17 @@
         android:datePickerMode="spinner"
         android:calendarViewShown="false" />
 
+    <EditText
+        android:id="@+id/tagname"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+        android:inputType="text"
+        android:hint="@string/new_task_hint"
+        android:layout_marginEnd="16dp"
+        />
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fabadd"
         android:layout_width="wrap_content"

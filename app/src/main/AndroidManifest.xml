@@ -36,7 +36,7 @@
             android:label="@string/action_add_task"
             />
         <activity
-            android:name=".CategoriesActivity"
+            android:name=".TagsActivity"
             android:label="@string/title_activity_categories"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>

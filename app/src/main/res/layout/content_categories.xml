@@ -1,17 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.krekapps.gamifiedtasks.CategoriesActivity"
+    tools:context="com.krekapps.gamifiedtasks.TagsActivity"
     tools:showIn="@layout/activity_categories">
 
-    <TextView
+    <EditText
+        android:id="@+id/newtagname"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="@string/new_tag_hint"
+        android:paddingTop="@dimen/app_bar_height" />
+
+    <Button
+        android:id="@+id/savetag"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/text_margin"
-        android:text="@string/large_text" />
+        android:onClick="saveNewTag"
+        android:text="@string/save_tag"
+        app:layout_constraintTop_toBottomOf="@+id/newtagname" />
 
-</android.support.v4.widget.NestedScrollView>
+    <Button
+        android:id="@+id/finishtags"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/text_margin"
+        android:onClick="saveAndFinish"
+        android:text="@string/finish_tag"
+        app:layout_constraintTop_toBottomOf="@+id/savetag" />
+
+
+
+</android.support.constraint.ConstraintLayout>

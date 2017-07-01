@@ -52,6 +52,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
@@ -122,7 +123,18 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
     protected void onListItemClick(ListView l, View v, int position, long id) {
         String item = (String) getListAdapter().getItem(position);//TODO may need this later
         //TODO adapter.notifyDataSetChanged();  might be good for adding and completing
-        new ListsActivity.CompleteTask(mCredential, position).execute();
+
+        String deleteTask = item.toString();
+        //Toast.makeText(this, deleteTask, Toast.LENGTH_LONG).show();
+        int index;
+        String[] parts = deleteTask.split(":");
+        if (parts[0].equals("id")) {
+            index = Integer.parseInt(parts[1]);
+        } else {
+            index = position;
+        }
+
+        new ListsActivity.CompleteTask(mCredential, index).execute();
         getResultsFromApi();
     }
 
@@ -323,8 +335,10 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
+        private String progress;
 
         MakeRequestTask(GoogleAccountCredential credential) {
+            progress = "";
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             driveService = new com.google.api.services.drive.Drive.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
@@ -377,7 +391,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                     //TODO this block needs to be in main activity, then return error from this activity
                 } else {
                     spreadsheetId = files.get(0).getId();
-                    String range = category + "!A1:A";
+                    String range = "Tasks!A1:A";
                     ValueRange response = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
                     List<List<Object>> values = response.getValues();
 
@@ -389,24 +403,64 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
                             Task t = Task.fromString(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
 
-                            if (t.getTags().size() < 1) {
+                            boolean hasOverdue = false;
+                            boolean hasDueToday = false;
+                            boolean hasCatTag = false;
+
+                            Set<Tag> tags = t.getTags();
+                            for (Tag tag : tags) {
+                                if (tag.getName().equals("overdue")) {
+                                    hasOverdue = true;
+                                //} else if (tag.getName().equals(category)) {
+                                    //hasCatTag = true;
+                                } else if (tag.getName().equals("due today")) {
+                                    hasDueToday = true;
+                                }
+                            }/*
+
+                            if (!hasCatTag) {
+                                //if (tags.size() > 0)
                                 t.addTag(new Tag(category));
+                                progress = "adding category as tag";
+                            }*/
+                            if (t.isDueToday()) {
+                                Task taskToday = Task.fromString(t.toString());//create new task since tasks and todays need different values
+                                taskToday.setRepeating(false);
+                                if (!hasDueToday) {
+                                    hasDueToday = true;
+                                    taskToday.addTag(new Tag("due today"));
+                                    t.addTag(new Tag("due today"));
+                                }
+                                todays.add(taskToday);
+                            } else {
+                                if (hasDueToday) {
+                                    hasOverdue = true;
+                                    t.addTag(new Tag("overdue"));
+                                    t.removeTag(new Tag("due today"));
+                                }
+                            }
+                            if (category.equals("Due Today")) {
+                                if (hasDueToday) {
+                                    t.setId(values.indexOf(row));
+                                    tasks.add(t);
+                                }
+                            } else if (category.equals("Overdue")) {
+                                if (hasOverdue) {
+                                    t.setId(values.indexOf(row));
+                                    tasks.add(t);
+                                }
+                            } else {
+                                tasks.add(t);
                             }
 
-                            tasks.add(t);
-                            if (t.isOverdue()) {
-                                Task today = Task.fromString(t.toString());//create new task since tasks and todays need different references
-                                today.setRepeating(false);
-                                todays.add(today);
-                            }
                         }
                         if (tasks.size() > 0) {
                             toReturn.put("tasks",tasks);
                         }
-
+/*
                         if (todays.size() > 0 && !category.equals("Due Today") && !category.equals("Routine")) {
                             toReturn.put("todays",todays);
-                        }
+                        }*/
                     }
                 }
             }
@@ -435,6 +489,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
         @Override
         protected void onPostExecute(Map<String,List<Task>> output) {
+            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (output == null || output.size() == 0) {
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else {
@@ -449,6 +504,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
         @Override
         protected void onCancelled() {
+            Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
@@ -503,7 +559,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private void getDataFromApi() throws IOException {
             //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             for (Task item : tasklist) {
-                ArrayList<Object> listOfTaskNames = new ArrayList<>();
+                List<Object> listOfTaskNames = new ArrayList<>();
                 listOfTaskNames.add(item.toString());
                 List<List<Object>> listOfList = new ArrayList<>();
                 listOfList.add(listOfTaskNames);
@@ -580,13 +636,19 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
          * @throws IOException
          */
         private void getDataFromApi() throws IOException {
-            String range = category + "!A" + Integer.toString(position+1);
+            String range = "Tasks!A" + Integer.toString(position+1);
             ValueRange readlineresponse = this.sheetService.spreadsheets().values().get(spreadsheetId, range).execute();
             List<List<Object>> values = readlineresponse.getValues();
             if (values != null && !values.isEmpty() && values.size() == 1) {
                 List<Object> value = values.get(0);
                 if (value != null && !value.isEmpty() && value.size() == 1) {
                     Task t = Task.fromString(value.get(0).toString());
+                    List<Tag> tags = t.getAlTags();
+                    for (int i=0;i<tags.size();i++) {
+                        if (tags.get(i).getName().equals("overdue") || tags.get(i).getName().equals("due today")) {
+                            tags.remove(tags.get(i));
+                        }
+                    }
                     if (t.isRepeating()) {
                         if (t.hasDueDate()) {
                             t.updateDueDate();
@@ -598,7 +660,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                         almain.add(al);
                         //TODO create new task with new due date
                         String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
-                        Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, category + "!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, category + "!A1:A").execute().getValues().size() + 1), new ValueRange().setValues(almain));
+                        Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, "Tasks!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, "Tasks!A1:A").execute().getValues().size() + 1), new ValueRange().setValues(almain));
                         response.setValueInputOption("raw");
                         response.execute();
                     }
@@ -613,7 +675,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
             int sheetId = -1;
             List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
             for (Sheet s : sheets) {
-                if (s.getProperties().getTitle().equals(category)) {
+                if (s.getProperties().getTitle().equals("Tasks")) {
                     sheetId = s.getProperties().getSheetId();
                 }
             }
