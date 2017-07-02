@@ -20,7 +20,7 @@
         android:id="@+id/isrepeating"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="is repeating" />
+        android:text="@string/is_repeating" />
 
     <DatePicker
         android:id="@+id/duedate"
@@ -36,7 +36,7 @@
         android:layout_marginRight="16dp"
         android:layout_marginBottom="16dp"
         android:inputType="text"
-        android:hint="@string/new_task_hint"
+        android:hint="@string/new_tag_hint"
         android:layout_marginEnd="16dp"
         />
 
@@ -47,7 +47,5 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
          />
-
-
 
 </LinearLayout>

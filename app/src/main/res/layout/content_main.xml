@@ -8,17 +8,10 @@
     tools:context="com.krekapps.gamifiedtasks.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <Button
-        android:id="@+id/get_categories"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="getCategories"
-        android:text="@string/get_categories"
-        />
-
     <Spinner
         android:id="@+id/categories"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_width="368dp"
+        android:layout_height="wrap_content"
+         />
 
 </android.support.constraint.ConstraintLayout>

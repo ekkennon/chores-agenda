@@ -1,11 +1,7 @@
 package com.krekapps.gamifiedtasks.models;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,11 +10,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by raefo on 12-Jun-17.
+ * Created by ekk on 12-Jun-17.
  */
 
 public class Task {
-    //TODO int position, String category, id = category + position;
     private String name;
     private Calendar dueDate;
     private boolean hasDueDate;
@@ -27,7 +22,7 @@ public class Task {
     private RepeatPeriod repeatPeriod;
     private Set<Tag> tags;
     private List<Tag> alTags;
-    private int id;
+    private int id;//TODO int position, String category, id = category + position;
 
     public Task(String name) {
         this.name = name;
@@ -57,16 +52,7 @@ public class Task {
         this.name = name;
     }
 
-    public Calendar getDue() {
-        return dueDate;
-    }
-
-    public String getDueDateString() {
-        //SimpleDateFormat monthParse = ;
-        //SimpleDateFormat monthDisplay =
-        //new SimpleDateFormat("MMMM").format(new SimpleDateFormat("MM").parse(dueDate.get));
-        //return monthDisplay.format();
-
+    private String getDueDateString() {
         return dueDate.get(Calendar.DAY_OF_MONTH) + "/" + dueDate.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault()) + "/" + dueDate.get(Calendar.YEAR);
     }
 
@@ -74,7 +60,7 @@ public class Task {
         this.dueDate = due;
     }
 
-    public void setDueDate(String date) {
+    private void setDueDate(String date) {
         String[] d = date.split("/");
         if (d.length == 3) {
             int month;
@@ -116,7 +102,8 @@ public class Task {
                     month = 11;
                     break;
                 default:
-                    month = 12;//TODO this should produce an error
+                    Calendar cal = Calendar.getInstance();
+                    month = cal.get(Calendar.MONTH);//TODO this could be a problem until calculating overdue dates is possible
                     break;
             }
             /*
@@ -164,28 +151,16 @@ public class Task {
         isRepeating = repeating;
     }
 
-    public int getRepeatFrequency() {
-        return repeatFrequency;
-    }
-
     public void setRepeatFrequency(int repeatFrequency) {
         this.repeatFrequency = repeatFrequency;
     }
 
-    public RepeatPeriod getRepeatPeriod() {
-        return repeatPeriod;
-    }
-
-    public String getRepeatPeriodString() {
+    private String getRepeatPeriodString() {
         return repeatPeriod.getPeriod();
     }
 
     public void setRepeatPeriod(RepeatPeriod repeatPeriod) {
         this.repeatPeriod = repeatPeriod;
-    }
-
-    public void setRepeatPeriod(String repeatPeriod) {
-        this.repeatPeriod = RepeatPeriod.valueOf(repeatPeriod);
     }
 
     public Set<Tag> getTags() {
@@ -196,7 +171,7 @@ public class Task {
         return alTags;
     }
 
-    public String getTagsString() {
+    private String getTagsString() {
         StringBuilder tagslist = new StringBuilder();
         for (Tag t : tags) {
             tagslist.append(t.toString());
@@ -217,9 +192,7 @@ public class Task {
     public static Task fromString(String s) {
         String[] list = s.split(":");
         Task t;
-        if (list.length % 2 == 1) {
-            t = new Task(/*"name:" + */s);
-        } else {
+        if (list.length % 2 == 0) {
             Map<String, String> map = new HashMap<>();
             for (int i = 0; i < list.length; i += 2) {
                 map.put(list[i], list[i + 1]);
@@ -245,6 +218,8 @@ public class Task {
                     }
                 }
             }
+        } else {
+            t = new Task(s);
         }
         return t;
     }

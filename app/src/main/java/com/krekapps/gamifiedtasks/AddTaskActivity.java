@@ -45,7 +45,7 @@ import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
 /**
- * Created by raefo on 11-Jun-17.
+ * Created by ekk on 11-Jun-17.
  */
 
 public class AddTaskActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
@@ -99,7 +99,7 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
                 Task newTask = new Task(editor.getText().toString());
 
                 if (dueDate) {
-                    newTask.setHasDueDate(dueDate);
+                    newTask.setHasDueDate(true);
                     newTask.setDueDate(date);
                 }
 

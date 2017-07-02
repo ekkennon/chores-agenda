@@ -33,6 +33,4 @@
         android:text="@string/finish_tag"
         app:layout_constraintTop_toBottomOf="@+id/savetag" />
 
-
-
 </android.support.constraint.ConstraintLayout>

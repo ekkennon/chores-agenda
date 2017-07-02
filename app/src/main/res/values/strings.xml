@@ -12,6 +12,7 @@
     <string name="save_tag">Save Tag and Add Another</string>
     <string name="finish_tag">Save Tag and Go Back</string>
     <string name="new_tag_hint">New Tag Name</string>
+    <string name="is_repeating">is repeating</string>
 
     <!-- Strings related to Settings -->
 

@@ -1,7 +1,7 @@
 package com.krekapps.gamifiedtasks.models;
 
 /**
- * Created by raefo on 21-Jun-17.
+ * Created by ekk on 21-Jun-17.
  */
 
 public class Tag {

@@ -11,13 +11,10 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -31,11 +28,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
-import com.google.api.services.sheets.v4.model.Sheet;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.krekapps.gamifiedtasks.models.Tag;
 
@@ -70,7 +64,7 @@ public class TagsActivity extends AppCompatActivity implements EasyPermissions.P
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //TODO change action
+                //TODO use this in the future
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG).setAction("Action", null).show();
             }
         });*/
@@ -268,11 +262,9 @@ public class TagsActivity extends AppCompatActivity implements EasyPermissions.P
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
         private ArrayList<Tag> tagslist;
-        String progress;
 
         MakeRequestTask(GoogleAccountCredential credential, ArrayList<Tag> tl) {
             tagslist = tl;
-            progress = "";
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             driveService = new com.google.api.services.drive.Drive.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
@@ -286,20 +278,11 @@ public class TagsActivity extends AppCompatActivity implements EasyPermissions.P
          */
         @Override
         protected Void doInBackground(Void... params) {
-            //List<String> resultTasks = new ArrayList<>();
             try {
-                //resultTasks =
                 getDataFromApi();
             } catch (Exception e) {
                 mLastError = e;
                 cancel(true);
-            } finally {
-                /*
-                if (resultTasks.size() < 1) {
-                    return null;
-                } else {
-                    return resultTasks;
-                }*/
             }
             return null;
         }
@@ -312,72 +295,26 @@ public class TagsActivity extends AppCompatActivity implements EasyPermissions.P
          * @throws IOException
          */
         private Void getDataFromApi() throws IOException {
-            /*
-            String fileName = "ChoresAgenda";
-            List<String> categoryNames = new ArrayList<>();
-            FileList result = driveService.files().list().setQ("name='" + fileName + "'").setFields("files(id)").execute();
-            List<File> files = result.getFiles();
-            if (files != null) {
-                if (files.size() > 1) {
-                    categoryNames.add("Multiple files returned with name ");
-                    categoryNames.add(fileName);
-                    categoryNames.add(". Please Check the files in your account.");
-                } else if (files.size() < 1) {
-                    //this.sheetService.spreadsheets().create(createSheet(fileName)).execute();
-                    categoryNames.add("create sheet");
-                } else {
-                    String spreadsheetId = files.get(0).getId();
-                    List<Sheet> sheets = sheetService.spreadsheets().get(spreadsheetId).execute().getSheets();
-                    for (Sheet s : sheets) {
-                        categoryNames.add(s.getProperties().getTitle());
-                    }
-                }
-            } else {
-                categoryNames.add("Tasks");//TODO temporary default
-            }
-            return categoryNames;*/
             String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
-            progress += ", spread sheet id = " + spreadsheetId;
-            Sheets.Spreadsheets.Values values = this.sheetService.spreadsheets().values();
-            progress += ", values = " + values.toString();
+
             for (Tag t : tagslist) {
                 ArrayList<Object> listOfTaskNames = new ArrayList<>();
                 listOfTaskNames.add(t.toString());
                 List<List<Object>> listOfList = new ArrayList<>();
                 listOfList.add(listOfTaskNames);
+
                 //TODO handle case of empty sheet (produces null pointer)
                 //TODO add all of these togeether instead of looping thru each
-
-                //ValueRange request = values.get(spreadsheetId, "Tags!A1:A").execute();
-                progress += ", value range ";
-                //int i = 1;
-                //if (request != null) {
-                    //progress += "request = " + request.getValues().getClass();
-                    //i += request.getValues().size() + 1;
-                //ValueRange request = this.sheetService.spreadsheets().values().update(spreadsheetId, "Tags!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, "Tags!A1:A").execute().getValues().size()+1), new ValueRange().setValues(listOfList));
-                //}
-                //progress += ", i = " + i + " ";
 
                 Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, "Tags!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, "Tags!A1:A").execute().getValues().size()+1), new ValueRange().setValues(listOfList));
                 response.setValueInputOption("raw");
                 response.execute();
-                progress += ", executed ";
             }
             return null;
         }
 
         @Override
-        protected void onPostExecute(Void v) {
-            /*if (output == null || output.size() == 0) {
-                Toast.makeText(TagsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
-            } else {
-                //displayCategories(output);
-            }*/
-        }
-
-        @Override
         protected void onCancelled() {
-            Toast.makeText(TagsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
