@@ -171,10 +171,10 @@ public class Task {
         return alTags;
     }
 
-    private String getTagsString() {
+    public String getTagsString() {
         StringBuilder tagslist = new StringBuilder();
         for (Tag t : tags) {
-            tagslist.append(t.toString());
+            tagslist.append(t.toString().trim());
             tagslist.append(",");
         }
         tagslist.deleteCharAt(tagslist.length() - 1);

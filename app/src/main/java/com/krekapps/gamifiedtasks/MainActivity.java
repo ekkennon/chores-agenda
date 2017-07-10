@@ -12,8 +12,13 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.krekapps.gamifiedtasks.models.Tag;
+import com.krekapps.gamifiedtasks.models.TaskList;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ekk on 18-Apr-17.
@@ -23,6 +28,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     Spinner taskCategories;
     static final String CATEGORY_INTENT = "category";
+    public static Map<Tag,TaskList> lists = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,9 +83,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void displayCategories() {
         List<String> catNames = new ArrayList<>();
-        catNames.add("Overdue");
-        catNames.add("Due Today");
-        catNames.add("All Tasks");
+
+        if (lists.size() > 0) {
+            for (Tag t : lists.keySet()) {
+                catNames.add(t.getName());
+            }
+        } else {
+            catNames.add("Overdue");
+            catNames.add("Due Today");
+            catNames.add("All Tasks");
+        }
+
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, catNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         taskCategories.setAdapter(adapter);

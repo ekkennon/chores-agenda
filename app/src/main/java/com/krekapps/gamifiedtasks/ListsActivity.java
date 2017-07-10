@@ -45,6 +45,7 @@ import com.google.api.services.sheets.v4.model.SpreadsheetProperties;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.krekapps.gamifiedtasks.models.Tag;
 import com.krekapps.gamifiedtasks.models.Task;
+import com.krekapps.gamifiedtasks.models.TaskList;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -332,8 +333,12 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
         private String fileName = "ChoresAgenda";
+        private Map<Tag,TaskList> tlists;
+        String progress;
 
         MakeRequestTask(GoogleAccountCredential credential) {
+            progress = "";
+            tlists = new HashMap<>();
             HttpTransport transport = AndroidHttp.newCompatibleTransport();
             JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
             driveService = new com.google.api.services.drive.Drive.Builder(transport, jsonFactory, credential).setApplicationName("ChoreList using Google Sheets API Android").build();
@@ -389,46 +394,90 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
                     if (values != null) {
                         List<Task> tasks = new ArrayList<>();
+                        List<Task> alltasks = new ArrayList<>();
                         for (List row : values) {
+                            progress = "next row";
 
                             Task task = Task.fromString(row.get(0).toString());//TODO what does get(0) do? is 0 the column?
+                            progress += ", task " + task.getTagsString();
 
                             boolean hasOverdue = false;
                             boolean hasDueToday = false;
+                            boolean hasCategory = false;
 
                             Set<Tag> tags = task.getTags();
                             for (Tag tag : tags) {
-                                if (tag.getName().equals("overdue")) {
-                                    hasOverdue = true;
-                                } else if (tag.getName().equals("due today")) {
+                                progress += ", tag " + tag.getName();
+                                if (tag.equals(new Tag("due today"))) {
                                     hasDueToday = true;
+                                    progress += ", has due today";
+                                    if (!task.isDueToday()) {
+                                        hasOverdue = true;
+                                        task.addTag(new Tag("overdue"));
+                                        progress += ", is overdue";
+                                    }
+                                } else if (tag.equals(new Tag("overdue"))) {
+                                    hasOverdue = true;
+                                    progress += ", has overdue";
                                 }
+
+                                if (tag.equals(new Tag(category))) {
+                                    hasCategory = true;
+                                    progress += ", has category";
+                                }
+
+                                if (tlists.containsKey(tag)) {
+                                    tlists.get(tag).addTask(task);
+                                    progress += ", adding task";
+                                } else {
+                                    TaskList tlist = new TaskList();
+                                    tlist.addTask(task);
+                                    tlists.put(tag, tlist);
+                                    progress += ", adding tag";
+                                }
+                                progress += ", next tag";
                             }
 
                             if (task.isDueToday() && !hasDueToday) {
                                 hasDueToday = true;
                                 task.addTag(new Tag("due today"));
-                            } else if (hasDueToday && !task.isDueToday()) {
-                                hasOverdue = true;
-                                task.addTag(new Tag("overdue"));
-                                task.removeTag(new Tag("due today"));
+                                progress += ", is due today";
                             }
 
                             switch (category) {
                                 case "Due Today":
+                                    progress += ", Due Today";
                                     if (hasDueToday) {
                                         task.setId(values.indexOf(row));
+                                        tasks.add(task);
+                                        progress += ", adding task";
                                     }
                                     break;
                                 case "Overdue":
+                                    progress += ", Overdue";
                                     if (hasOverdue) {
                                         task.setId(values.indexOf(row));
+                                        tasks.add(task);
+                                        progress += ", adding task";
                                     }
+                                    break;
+                                default:
+                                    alltasks.add(task);
+                                    progress += ", default or all";
+                                    if (hasCategory) {
+                                        task.setId(values.indexOf(row));
+                                        tasks.add(task);
+                                        progress += ", adding task";
+                                    }
+                                    break;
                             }
-                            tasks.add(task);
                         }
                         if (tasks.size() > 0) {
                             toReturn.put("tasks",tasks);
+                            progress += ", adding tasks";
+                        } else {
+                            toReturn.put("tasks",alltasks);
+                            progress += ", adding alltasks";
                         }
                     }
                 }
@@ -463,15 +512,18 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
 
         @Override
         protected void onPostExecute(Map<String,List<Task>> output) {
+            //Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (output == null || output.size() == 0) {
                 Toast.makeText(ListsActivity.this, "No results returned.", Toast.LENGTH_LONG).show();
             } else if (output.containsKey("tasks")) {
+                MainActivity.lists = tlists;
                 displayTasks(output.get("tasks"));
             }
         }
 
         @Override
         protected void onCancelled() {
+            Toast.makeText(ListsActivity.this, progress, Toast.LENGTH_LONG).show();
             if (mLastError != null) {
                 if (mLastError instanceof GooglePlayServicesAvailabilityIOException) {
                     showGooglePlayServicesAvailabilityErrorDialog(((GooglePlayServicesAvailabilityIOException) mLastError).getConnectionStatusCode());
