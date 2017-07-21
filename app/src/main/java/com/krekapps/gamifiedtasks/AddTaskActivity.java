@@ -111,11 +111,19 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
                 }
 
                 EditText tagname = (EditText) findViewById(R.id.tagname);
-                String tag = tagname.getText().toString();
-                newTask.addTag(new Tag(tag));
+                String[] tags = tagname.getText().toString().split(",");
+                for (String t : tags) {
+                    String tag = t.trim().toLowerCase();
+                    newTask.addTag(new Tag(tag));
+                    if (!MainActivity.tags.contains(tag)) {
+                        new AddTaskActivity.AddData(mCredential, "Tags," + tag).execute();
+                        MainActivity.tags.add(new Tag(tag));
+                    }
+                }
 
                 editor.setText("");
-                new AddTaskActivity.AddTask(mCredential, newTask).execute();
+
+                new AddTaskActivity.AddData(mCredential, "Tasks," + newTask.toString()).execute();
             }
         });
     }
@@ -290,14 +298,16 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         // Do nothing.
     }
 
-    private class AddTask extends AsyncTask<Void, Void, Void> {
+    private class AddData extends AsyncTask<Void, Void, Void> {
         private com.google.api.services.drive.Drive driveService = null;
         private com.google.api.services.sheets.v4.Sheets sheetService = null;
         private Exception mLastError = null;
-        private Task newTask;
+        private String sheet;
+        private String data;
 
-        AddTask(GoogleAccountCredential credential, Task task) {
-            newTask = task;
+        AddData(GoogleAccountCredential credential, String toAdd) {
+            sheet = toAdd.split(",")[0];
+            data = toAdd.split(",")[1];
             driveService = new com.google.api.services.drive.Drive.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
             sheetService = new com.google.api.services.sheets.v4.Sheets.Builder(AndroidHttp.newCompatibleTransport(), JacksonFactory.getDefaultInstance(), credential).setApplicationName("ChoreList using Google Sheets API Android").build();
         }
@@ -330,13 +340,13 @@ public class AddTaskActivity extends AppCompatActivity implements EasyPermission
         private void getDataFromApi() throws IOException {
             //the new task needs to be sent as a List<List<Object>>, the following code creates that with the one task name added
             ArrayList<Object> listOfTaskNames = new ArrayList<>();
-            listOfTaskNames.add(newTask.toString());
+            listOfTaskNames.add(data);
             List<List<Object>> listOfList = new ArrayList<>();
             listOfList.add(listOfTaskNames);
 
             String spreadsheetId = driveService.files().list().setQ("name='ChoresAgenda'").setFields("files(id)").execute().getFiles().get(0).getId();
 
-            Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, "Tasks!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, "Tasks!A1:A").execute().getValues().size()+1), new ValueRange().setValues(listOfList));
+            Sheets.Spreadsheets.Values.Update response = this.sheetService.spreadsheets().values().update(spreadsheetId, sheet + "!A" + Integer.toString(this.sheetService.spreadsheets().values().get(spreadsheetId, sheet + "!A1:A").execute().getValues().size()+1), new ValueRange().setValues(listOfList));
             response.setValueInputOption("raw");
             response.execute();
         }

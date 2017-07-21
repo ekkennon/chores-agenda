@@ -413,7 +413,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                                     progress += ", has due today";
                                     if (!task.isDueToday()) {
                                         hasOverdue = true;
-                                        task.addTag(new Tag("overdue"));
+                                        task.addTag(new Tag("overdue"));//TODO because this isn't saving to the sheet
                                         progress += ", is overdue";
                                     }
                                 } else if (tag.equals(new Tag("overdue"))) {
@@ -445,7 +445,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                             }
 
                             switch (category) {
-                                case "Due Today":
+                                case "due today":
                                     progress += ", Due Today";
                                     if (hasDueToday) {
                                         task.setId(values.indexOf(row));
@@ -453,7 +453,7 @@ public class ListsActivity extends ListActivity implements EasyPermissions.Permi
                                         progress += ", adding task";
                                     }
                                     break;
-                                case "Overdue":
+                                case "overdue":
                                     progress += ", Overdue";
                                     if (hasOverdue) {
                                         task.setId(values.indexOf(row));
